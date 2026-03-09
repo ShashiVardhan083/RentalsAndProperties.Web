@@ -1,0 +1,440 @@
+﻿@model List<RentalsAndProperties.Web.Models.PropertyResponseModel>
+@using RentalsAndProperties.Web.Helpers
+@{
+    ViewData["Title"] = "My Properties";
+    var roles = SessionHelper.GetRoles(Context.Session);
+    var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
+}
+
+@if (!isOwnerOrAdmin)
+{
+    <!-- Customer landed here: show upgrade prompt -->
+    <div class="dashboard-page">
+        <div class="dashboard-header">
+            <div class="dashboard-header-inner">
+                <div>
+                    <h1 class="dashboard-title">My Properties</h1>
+                    <p class="dashboard-subtitle">Manage your listings</p>
+                </div>
+            </div>
+        </div>
+        <div class="dashboard-body">
+            <div class="upgrade-prompt">
+                <div class="upgrade-icon">🏡</div>
+                <h2 class="upgrade-title">You're browsing as a Customer</h2>
+                <p class="upgrade-desc">
+                    To list properties and manage your own listings, you need to become an Owner.
+                    It's free and takes one click.
+                </p>
+                <div class="upgrade-perks">
+                    <div class="upgrade-perk">✅ List unlimited properties</div>
+                    <div class="upgrade-perk">✅ Reach thousands of tenants</div>
+                    <div class="upgrade-perk">✅ Manage listings from your dashboard</div>
+                </div>
+                <form asp-controller="Auth" asp-action="BecomeOwner" method="post" style="margin-top:1.5rem;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-primary btn-lg"
+                            onclick="return confirm('Become an Owner and start listing properties?')">
+                        🏡 Become an Owner — It&apos;s Free →
+                    </button>
+                </form>
+                <a href="/Property" class="btn btn-secondary mt-2">← Keep Browsing</a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Owner / Admin view -->
+    <div class="dashboard-page">
+        <div class="dashboard-header">
+            <div class="dashboard-header-inner">
+                <div>
+                    <h1 class="dashboard-title">My Properties</h1>
+                    <p class="dashboard-subtitle">Manage your listings</p>
+                </div>
+                <a href="/Property/Create" class="btn btn-primary">
+                    + Add New Property
+                </a>
+            </div>
+        </div>
+
+        <div class="dashboard-body">
+
+            @if (!string.IsNullOrEmpty(ViewBag.Success?.ToString()))
+            {
+                <div class="alert alert-success">✓ @ViewBag.Success</div>
+            }
+            @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
+            {
+                <div class="alert alert-error">⚠ @ViewBag.Error</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">✓ @TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">⚠ @TempData["Error"]</div>
+            }
+
+            @if (Model == null || Model.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">🏘️</div>
+                    <h3>No Properties Listed Yet</h3>
+                    <p>Start earning by listing your first property. It only takes a few minutes.</p>
+                    <a href="/Property/Create" class="btn btn-primary mt-3">List Your First Property →</a>
+                </div>
+            }
+            else
+            {
+                <!-- Stats Row -->
+                <div class="dashboard-stats">
+                    <div class="dash-stat">
+                        <div class="dash-stat-number">@Model.Count</div>
+                        <div class="dash-stat-label">Total Listings</div>
+                    </div>
+                    <div class="dash-stat">
+                        <div class="dash-stat-number text-green">@Model.Count(p => p.Status == "Active")</div>
+                        <div class="dash-stat-label">Active</div>
+                    </div>
+                    <div class="dash-stat">
+                        <div class="dash-stat-number text-orange">@Model.Count(p => p.Status == "PendingApproval")</div>
+                        <div class="dash-stat-label">Pending</div>
+                    </div>
+                    <div class="dash-stat">
+                        <div class="dash-stat-number text-red">@Model.Count(p => p.Status == "Rejected")</div>
+                        <div class="dash-stat-label">Rejected</div>
+                    </div>
+                </div>
+
+                <!-- Properties Table -->
+                <div class="dash-table-wrap">
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>Property</th>
+                                <th>City</th>
+                                <th>Price</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="table-prop-info">
+                                            <div class="table-prop-img"
+                                                 style="@(!string.IsNullOrEmpty(p.PrimaryImageUrl) ? $"background-image:url('{p.PrimaryImageUrl}');background-size:cover;background-position:center;" : "")">
+                                                @if (string.IsNullOrEmpty(p.PrimaryImageUrl))
+                                                {
+                                                    <span>🏠</span>
+                                                }
+                                            </div>
+                                            <div>
+                                                <div class="table-prop-title">@p.Title</div>
+                                                <div class="table-prop-meta">@p.BHKType · @p.ListingType</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>@p.City</td>
+                                    <td>
+                                        <strong>₹@p.Price.ToString("N0")</strong>
+                                        @if (p.ListingType == "Rent")
+                                        {
+                                            <span class="text-muted">/mo</span>
+                                        }
+                                    </td>
+                                    <td>@p.PropertyType</td>
+                                    <td>
+                                        <span class="status-pill status-@p.Status.ToLower()">
+                                            @(p.Status == "PendingApproval" ? "Pending" : p.Status)
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <a href="/Property/Details/@p.PropertyId"
+                                               class="btn btn-ghost btn-sm" title="View">👁</a>
+
+                                            <a href="/Property/UploadImages/@p.PropertyId"
+                                               class="btn btn-ghost btn-sm" title="Images">
+                                                📸 <span class="img-count-chip">@(p.ImageCount) imgs</span>
+                                            </a>
+
+                                            <a href="/Property/Edit/@p.PropertyId"
+                                               class="btn btn-secondary btn-sm" title="Edit">✏️ Edit</a>
+
+                                            <form asp-controller="Property" asp-action="Delete"
+                                                  asp-route-id="@p.PropertyId" method="post"
+                                                  onsubmit="return confirm('Delete \'@p.Title\'? This cannot be undone.')">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger btn-sm" title="Delete">🗑</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@section HeadStyles {
+    <style>
+        .dashboard-page {
+            padding-top: 68px;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            background: var(--gradient-hero);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 2.5rem 2rem;
+        }
+
+        .dashboard-header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-secondary);
+            margin-top: .25rem;
+        }
+
+        .dashboard-body {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .dash-stat {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .dash-stat-number {
+            font-family: 'Syne', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+        }
+
+        .dash-stat-label {
+            font-size: .8rem;
+            color: var(--text-muted);
+            margin-top: .25rem;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .text-green {
+            color: #43e97b;
+        }
+
+        .text-orange {
+            color: #f59e0b;
+        }
+
+        .text-red {
+            color: #ef4444;
+        }
+
+        .dash-table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .dash-table th {
+                padding: .85rem 1.25rem;
+                text-align: left;
+                font-size: .75rem;
+                text-transform: uppercase;
+                letter-spacing: .05em;
+                color: var(--text-muted);
+                border-bottom: 1px solid var(--border-subtle);
+                background: rgba(0,0,0,.02);
+            }
+
+            .dash-table td {
+                padding: 1rem 1.25rem;
+                border-bottom: 1px solid var(--border-subtle);
+                font-size: .875rem;
+                vertical-align: middle;
+            }
+
+            .dash-table tr:last-child td {
+                border-bottom: none;
+            }
+
+            .dash-table tr:hover td {
+                background: rgba(99,102,241,.03);
+            }
+
+        .table-prop-info {
+            display: flex;
+            align-items: center;
+            gap: .85rem;
+        }
+
+        .table-prop-img {
+            width: 50px;
+            height: 40px;
+            border-radius: var(--radius-sm);
+            background: var(--gradient-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .table-prop-title {
+            font-weight: 600;
+            font-size: .9rem;
+        }
+
+        .table-prop-meta {
+            font-size: .75rem;
+            color: var(--text-muted);
+            margin-top: .15rem;
+        }
+
+        .table-actions {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: .25rem .7rem;
+            border-radius: 100px;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .status-active {
+            background: rgba(67,233,123,.15);
+            color: #43e97b;
+        }
+
+        .status-pendingapproval {
+            background: rgba(247,151,30,.15);
+            color: #f59e0b;
+        }
+
+        .status-rejected {
+            background: rgba(239,68,68,.15);
+            color: #fca5a5;
+        }
+
+        .status-sold,
+        .status-rented {
+            background: rgba(99,102,241,.15);
+            color: #a78bfa;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: .5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+        }
+
+        /* Upgrade prompt for customers */
+        .upgrade-prompt {
+            max-width: 520px;
+            margin: 4rem auto;
+            text-align: center;
+            background: var(--bg-card);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-lg);
+            padding: 3rem 2rem;
+        }
+
+        .upgrade-icon {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .upgrade-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: .75rem;
+        }
+
+        .upgrade-desc {
+            color: var(--text-secondary);
+            line-height: 1.7;
+            margin-bottom: 1.25rem;
+        }
+
+        .upgrade-perks {
+            display: flex;
+            flex-direction: column;
+            gap: .4rem;
+            margin-bottom: .5rem;
+        }
+
+        .upgrade-perk {
+            font-size: .9rem;
+            color: var(--text-secondary);
+        }
+
+        @@media (max-width: 768px) {
+            .dash-table th:nth-child(3), .dash-table td:nth-child(3), .dash-table th:nth-child(4), .dash-table td:nth-child(4)
+
+        {
+            display: none;
+        }
+
+        }
+    </style>
+}

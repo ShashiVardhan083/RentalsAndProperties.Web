@@ -1,0 +1,24 @@
+﻿@* _PhoneInput.cshtml – Reusable phone number input partial *@
+@model string
+@{
+    var fieldId = ViewData["FieldId"]?.ToString() ?? "PhoneNumber";
+    var fieldName = ViewData["FieldName"]?.ToString() ?? "PhoneNumber";
+    var label = ViewData["Label"]?.ToString() ?? "Phone Number";
+    var placeholder = ViewData["Placeholder"]?.ToString() ?? "+91 98765 43210";
+}
+<div class="form-group" id="@(fieldId)Group">
+    <label for="@fieldId" class="form-label-static">@label</label>
+    <input type="tel"
+           id="@fieldId"
+           name="@fieldName"
+           class="form-control @(ViewData["CssClass"])"
+           placeholder="@placeholder"
+           value="@Model"
+           autocomplete="tel"
+           inputmode="tel"
+           required
+           data-required="true"
+           data-required-msg="Phone number is required."
+           maxlength="16" />
+    <span class="invalid-feedback" id="@(fieldId)Error"></span>
+</div>

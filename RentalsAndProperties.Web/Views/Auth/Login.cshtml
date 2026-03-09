@@ -1,0 +1,112 @@
+﻿@model RentalsAndProperties.Web.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page">
+    <div class="hero-orb orb-1" aria-hidden="true"></div>
+    <div class="hero-orb orb-2" aria-hidden="true"></div>
+
+    <div class="auth-card" role="main" aria-labelledby="loginTitle">
+
+        <!-- Logo + Title -->
+        <div class="auth-logo">
+            <div class="auth-logo-icon" aria-hidden="true">🔑</div>
+            <h1 class="auth-title" id="loginTitle">Welcome Back</h1>
+            <p class="auth-subtitle">Sign in to your RentalsAndProperties account</p>
+        </div>
+
+        <!-- Server validation summary -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error" role="alert" id="serverError">
+                <span aria-hidden="true">⚠</span>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <form asp-action="Login" asp-controller="Auth" method="post"
+              id="loginForm" novalidate autocomplete="on">
+
+            @Html.AntiForgeryToken()
+
+            @if (!string.IsNullOrEmpty(ViewBag.ReturnUrl?.ToString()))
+            {
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl">
+            }
+
+            <!-- Phone Field (partial view) -->
+            @await Html.PartialAsync("_PhoneInput", Model.PhoneNumber,
+            new ViewDataDictionary(ViewData) {
+                        { "FieldId", "PhoneNumber" },
+                        { "FieldName", "PhoneNumber" },
+                        { "Label", "Phone Number" }
+                        })
+
+            <!-- Validation message from model state -->
+            <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
+
+            <!-- Password Field (partial view) -->
+            @await Html.PartialAsync("_PasswordInput", (object)null!,
+                        new ViewDataDictionary(ViewData) {
+                        { "FieldId", "Password" },
+                        { "FieldName", "Password" },
+                        { "Label", "Password" },
+                        { "ShowStrength", false }
+                        })
+
+            <span asp-validation-for="Password" class="invalid-feedback"></span>
+
+            <!-- Remember me -->
+            <div class="flex items-center justify-between mb-3" style="margin-top:-.5rem;">
+                <label class="flex items-center gap-2" style="cursor:pointer;font-size:.875rem;color:var(--text-secondary);">
+                    <input type="checkbox" asp-for="RememberMe"
+                           style="accent-color:var(--accent-1);width:16px;height:16px;">
+                    Remember me
+                </label>
+                <a href="/Auth/ForgotPassword" class="auth-link" style="font-size:.875rem;">
+                    Forgot password?
+                </a>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
+                <span class="btn-text">Sign In</span>
+                <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            Don't have an account?
+            <a href="/Auth/Register" class="auth-link">Create one free →</a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form    = document.getElementById('loginForm');
+            const loginBtn = document.getElementById('loginBtn');
+
+            Validator.attachLiveValidation(form);
+
+            form.addEventListener('submit', function (e) {
+                // Client-side validation before submit
+                const isValid = Validator.validateForm(form);
+                if (!isValid) {
+                    e.preventDefault();
+                    Toast.error('Please fix the errors above.');
+                    return;
+                }
+                setButtonLoading(loginBtn, true);
+                // Button stays loading while form submits (server-side redirect resets it)
+            });
+        });
+    </script>
+}

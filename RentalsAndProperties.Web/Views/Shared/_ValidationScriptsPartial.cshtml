@@ -1,0 +1,12 @@
+﻿@* Client-side validation partial - included in auth forms *@
+<script>
+// Attach validation after partial load
+document.addEventListener('DOMContentLoaded', function () {
+    if (typeof Validator !== 'undefined') {
+        Validator.attachLiveValidation();
+    }
+    if (typeof initPasswordToggles !== 'undefined') {
+        initPasswordToggles();
+    }
+});
+</script>

@@ -1,0 +1,654 @@
+﻿@model RentalsAndProperties.Web.Models.PropertySearchResultModel
+@using RentalsAndProperties.Web.Helpers
+@{
+    ViewData["Title"] = "Browse Properties";
+    var isAuth = SessionHelper.IsAuthenticated(Context.Session);
+    var roles = SessionHelper.GetRoles(Context.Session);
+    var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
+    var query = ViewBag.Query as RentalsAndProperties.Web.Models.PropertySearchQueryModel
+                ?? new RentalsAndProperties.Web.Models.PropertySearchQueryModel();
+    var cities = ViewBag.Cities as List<string> ?? new List<string>();
+    var props = Model?.Properties ?? new List<RentalsAndProperties.Web.Models.PropertyCardModel>();
+    var total = Model?.TotalCount ?? 0;
+}
+
+<div class="browse-page" data-authenticated="@(isAuth ? "true" : "false")">
+
+    <!-- ── Page Header ── -->
+    <div class="browse-hero">
+        <div class="hero-orb orb-1" aria-hidden="true"></div>
+        <div class="hero-orb orb-2" aria-hidden="true"></div>
+        <div class="browse-hero-inner">
+            <div class="hero-badge">🔍 Smart Search</div>
+            <h1 class="browse-hero-title">
+                Find Your <span class="gradient-text">Perfect Property</span>
+            </h1>
+            <p class="browse-hero-sub">
+                @total verified propert@(total == 1 ? "y" : "ies") available
+                @if (!string.IsNullOrWhiteSpace(query.City))
+                {
+                    <span>in <strong>@query.City</strong></span>
+                }
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Main Layout ── -->
+    <div class="browse-layout">
+
+        <!-- ══ LEFT SIDEBAR: Filters ══════════════════════════════════════ -->
+        <aside class="filter-sidebar" id="filterSidebar" aria-label="Property filters">
+            <div class="filter-sidebar-header">
+                <h2 class="filter-sidebar-title">🔧 Filters</h2>
+                <button class="filter-clear-all" id="clearAllFilters" type="button">
+                    Clear All
+                </button>
+            </div>
+
+            <form method="get" action="/Property/Browse" id="filterForm">
+
+                <!-- City -->
+                <div class="filter-group">
+                    <label class="filter-label" for="cityInput">📍 City</label>
+                    <div class="filter-search-wrap">
+                        <input type="text" name="city" id="cityInput"
+                               class="filter-input" placeholder="e.g. Mumbai, Pune…"
+                               value="@query.City"
+                               list="citySuggestions"
+                               autocomplete="off" />
+                        <datalist id="citySuggestions">
+                            @foreach (var c in cities)
+                            {
+                                <option value="@c" />
+                            }
+                        </datalist>
+                    </div>
+                </div>
+
+                <!-- Listing Type -->
+                <div class="filter-group">
+                    <label class="filter-label">🏷 Listing Type</label>
+                    <div class="filter-chip-group" id="listingTypeGroup">
+                        <label class="filter-chip @(query.ListingType == "" ? "active" : "")">
+                            <input type="radio" name="listingType" value="" @(string.IsNullOrEmpty(query.ListingType) ? "checked" : "") hidden /> All
+                        </label>
+                        <label class="filter-chip @(query.ListingType == "Rent" ? "active" : "")">
+                            <input type="radio" name="listingType" value="Rent" @(query.ListingType == "Rent" ? "checked" : "") hidden /> For Rent
+                        </label>
+                        <label class="filter-chip @(query.ListingType == "Sale" ? "active" : "")">
+                            <input type="radio" name="listingType" value="Sale" @(query.ListingType == "Sale" ? "checked" : "") hidden /> For Sale
+                        </label>
+                    </div>
+                </div>
+
+                <!-- BHK Type -->
+                <div class="filter-group">
+                    <label class="filter-label">🏢 BHK Configuration</label>
+                    <div class="filter-chip-group filter-chip-wrap" id="bhkGroup">
+                        @foreach (var bhk in new[] { ("", "Any"), ("OneRK", "1 RK"), ("OneBHK", "1 BHK"), ("TwoBHK", "2 BHK"), ("ThreeBHK", "3 BHK"), ("FourBHK", "4 BHK"), ("Penthouse", "Penthouse") })
+                        {
+                            <label class="filter-chip @(query.BHKType == bhk.Item1 ? "active" : "")">
+                                <input type="radio" name="bhkType" value="@bhk.Item1"
+                                       @(query.BHKType == bhk.Item1 ? "checked" : "") hidden />
+                                @bhk.Item2
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Property Type -->
+                <div class="filter-group">
+                    <label class="filter-label">🏘 Property Type</label>
+                    <select name="propertyType" class="filter-select" id="propertyTypeSelect">
+                        <option value="">All Types</option>
+                        @foreach (var pt in new[] { "Apartment", "Villa", "Studio", "Office", "Penthouse" })
+                        {
+                            <option value="@pt" selected="@(query.PropertyType == pt)">@pt</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Price Range -->
+                <div class="filter-group">
+                    <label class="filter-label">💰 Price Range</label>
+                    <div class="price-range-wrap">
+                        <div class="price-range-inputs">
+                            <div class="price-input-wrap">
+                                <span class="price-prefix">₹</span>
+                                <input type="number" name="minPrice" id="minPrice"
+                                       class="filter-input price-input"
+                                       placeholder="Min"
+                                       value="@query.MinPrice"
+                                       min="0" step="1000" />
+                            </div>
+                            <span class="price-dash">–</span>
+                            <div class="price-input-wrap">
+                                <span class="price-prefix">₹</span>
+                                <input type="number" name="maxPrice" id="maxPrice"
+                                       class="filter-input price-input"
+                                       placeholder="Max"
+                                       value="@query.MaxPrice"
+                                       min="0" step="1000" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Furnishing -->
+                <div class="filter-group">
+                    <label class="filter-label">🛋 Furnishing</label>
+                    <div class="filter-chip-group filter-chip-wrap" id="furnishingGroup">
+                        @foreach (var f in new[] { ("", "Any"), ("Unfurnished", "Unfurnished"), ("SemiFurnished", "Semi"), ("FullyFurnished", "Fully") })
+                        {
+                            <label class="filter-chip @(query.FurnishingType == f.Item1 ? "active" : "")">
+                                <input type="radio" name="furnishingType" value="@f.Item1"
+                                       @(query.FurnishingType == f.Item1 ? "checked" : "") hidden />
+                                @f.Item2
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Bedrooms & Bathrooms -->
+                <div class="filter-group">
+                    <label class="filter-label">🛏 Min Bedrooms</label>
+                    <div class="filter-chip-group">
+                        @foreach (var n in new[] { ("", "Any"), ("1", "1+"), ("2", "2+"), ("3", "3+"), ("4", "4+") })
+                        {
+                            <label class="filter-chip @(query.MinBedrooms?.ToString() == n.Item1 ? "active" : "")">
+                                <input type="radio" name="minBedrooms" value="@n.Item1"
+                                       @(query.MinBedrooms?.ToString() == n.Item1 ? "checked" : "") hidden />
+                                @n.Item2
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">🚿 Min Bathrooms</label>
+                    <div class="filter-chip-group">
+                        @foreach (var n in new[] { ("", "Any"), ("1", "1+"), ("2", "2+"), ("3", "3+") })
+                        {
+                            <label class="filter-chip @(query.MinBathrooms?.ToString() == n.Item1 ? "active" : "")">
+                                <input type="radio" name="minBathrooms" value="@n.Item1"
+                                       @(query.MinBathrooms?.ToString() == n.Item1 ? "checked" : "") hidden />
+                                @n.Item2
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Hidden page reset -->
+                <input type="hidden" name="page" value="1" />
+                <input type="hidden" name="sortBy" value="@query.SortBy" id="sortByHidden" />
+
+                <button type="submit" class="btn btn-primary btn-block" id="applyFiltersBtn">
+                    <span class="btn-text">Apply Filters →</span>
+                    <span class="btn-spinner"></span>
+                </button>
+            </form>
+        </aside>
+
+        <!-- ══ RIGHT PANEL: Results ════════════════════════════════════════ -->
+        <main class="results-panel" id="resultsPanel">
+
+            <!-- Results Toolbar -->
+            <div class="results-toolbar">
+                <div class="results-summary">
+                    <strong>@total</strong> propert@(total == 1 ? "y" : "ies") found
+                    @if (!string.IsNullOrWhiteSpace(query.City))
+                    {
+                        <span class="active-filter-tag">
+                            📍 @query.City
+                            <a href="/Property/Browse" class="tag-remove" title="Remove city filter">×</a>
+                        </span>
+                    }
+                </div>
+
+                <div class="sort-wrap">
+                    <label for="sortSelect" class="sort-label">Sort:</label>
+                    <select class="filter-select sort-select" id="sortSelect"
+                            onchange="applySort(this.value)">
+                        <option value="Newest" selected="@(query.SortBy == "Newest")">Newest First</option>
+                        <option value="PriceLowToHigh" selected="@(query.SortBy == "PriceLowToHigh")">Price: Low → High</option>
+                        <option value="PriceHighToLow" selected="@(query.SortBy == "PriceHighToLow")">Price: High → Low</option>
+                        <option value="MostRelevant" selected="@(query.SortBy == "MostRelevant")">Most Relevant</option>
+                    </select>
+
+                    <!-- Mobile filter toggle -->
+                    <button class="btn btn-secondary btn-sm filter-toggle-btn"
+                            id="filterToggleBtn" type="button" aria-expanded="false"
+                            aria-controls="filterSidebar">
+                        🔧 Filters
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error -->
+            @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
+            {
+                <div class="alert alert-error">⚠ @ViewBag.Error</div>
+            }
+
+            <!-- Property Grid -->
+            @if (!props.Any())
+            {
+                <div class="no-results-state" id="noResults">
+                    <div class="no-results-icon">🔍</div>
+                    <h3 class="no-results-title">No properties found</h3>
+                    <p class="no-results-sub">
+                        Try adjusting your filters or expanding your search area.
+                    </p>
+                    <a href="/Property/Browse" class="btn btn-primary mt-3">Clear All Filters</a>
+                </div>
+            }
+            else
+            {
+                <div class="search-results-grid" id="resultsGrid" role="list">
+                    @foreach (var p in props)
+                    {
+                        <article class="search-card" role="listitem" data-price="@p.Price">
+
+                            <!-- Image -->
+                            <div class="search-card-img"
+                                 style="@(!string.IsNullOrEmpty(p.PrimaryImageUrl) ? $"background-image:url('{p.PrimaryImageUrl}');background-size:cover;background-position:center;" : "")">
+                                @if (string.IsNullOrEmpty(p.PrimaryImageUrl))
+                                {
+                                    <span class="search-card-placeholder">🏠</span>
+                                }
+                                <div class="search-card-badge @(p.ListingType == "Rent" ? "badge-rent" : "badge-sale")">
+                                    @p.ListingType
+                                </div>
+                                @if (p.ImageUrls.Count > 1)
+                                {
+                                    <div class="search-card-photo-count">📷 @p.ImageUrls.Count</div>
+                                }
+                            </div>
+
+                            <!-- Body -->
+                            <div class="search-card-body">
+                                <div class="search-card-price">
+                                    ₹@p.Price.ToString("N0")
+                                    @if (p.ListingType == "Rent")
+                                    {
+                                        <span class="price-mo">/mo</span>
+                                    }
+                                </div>
+                                <h3 class="search-card-title">@p.Title</h3>
+                                <div class="search-card-location">📍 @p.City</div>
+
+                                <div class="search-card-chips">
+                                    <span class="s-chip">@p.PropertyType</span>
+                                    <span class="s-chip">@p.BHKType</span>
+                                    <span class="s-chip">@p.FurnishingType</span>
+                                </div>
+
+                                <div class="search-card-amenities">
+                                    <span class="amenity-mini">🛏 @p.Bedrooms</span>
+                                    <span class="amenity-mini">🚿 @p.Bathrooms</span>
+                                    <span class="amenity-mini">📐 @p.SquareFeet.ToString("N0") sqft</span>
+                                </div>
+
+                                <div class="search-card-footer">
+                                    <div class="search-card-owner">
+                                        <span class="owner-avatar-mini">
+                                            @(p.OwnerName.Length > 0 ? p.OwnerName[0].ToString().ToUpper() : "?")
+                                        </span>
+                                        <span class="owner-trust">⭐ @p.OwnerTrustScore.ToString("F0")</span>
+                                    </div>
+                                    @if (isAuth)
+                                    {
+                                        <a href="/Property/Details/@p.PropertyId"
+                                           class="btn-view-details">View →</a>
+                                    }
+                                    else
+                                    {
+                                        <a href="/Auth/Login?returnUrl=/Property/Details/@p.PropertyId"
+                                           class="btn-view-details btn-view-locked">🔒 Login</a>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+
+                <!-- Skeleton loader (shown during AJAX loads) -->
+                <div class="skeleton-grid" id="skeletonGrid" style="display:none;">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        <div class="skeleton-card">
+                            <div class="skeleton skeleton-img"></div>
+                            <div class="skeleton-body">
+                                <div class="skeleton skeleton-line w-40"></div>
+                                <div class="skeleton skeleton-line w-70"></div>
+                                <div class="skeleton skeleton-line w-55"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination -->
+                @if (Model != null && Model.TotalPages > 1)
+                {
+                    <div class="browse-pagination">
+                        @if (Model.CurrentPage > 1)
+                        {
+                            <a href="/Property/Browse?@BuildQueryString(query, Model.CurrentPage - 1)"
+                               class="btn btn-secondary btn-sm pagination-btn">
+                                ← Previous
+                            </a>
+                        }
+
+                        <div class="pagination-pages">
+                            @{
+                                int start = Math.Max(1, Model.CurrentPage - 2);
+                                int end = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                            }
+                            @for (int pg = start; pg <= end; pg++)
+                            {
+                                <a href="/Property/Browse?@BuildQueryString(query, pg)"
+                                   class="pagination-num @(pg == Model.CurrentPage ? "active" : "")">@pg</a>
+                            }
+                        </div>
+
+                        @if (Model.CurrentPage < Model.TotalPages)
+                        {
+                            <a href="/Property/Browse?@BuildQueryString(query, Model.CurrentPage + 1)"
+                               class="btn btn-secondary btn-sm pagination-btn">
+                                Next →
+                            </a>
+                        }
+
+                        <span class="pagination-info">
+                            Page @Model.CurrentPage of @Model.TotalPages
+                            &nbsp;·&nbsp; @total total
+                        </span>
+                    </div>
+                }
+            }
+        </main>
+    </div>
+</div>
+
+@functions {
+    string BuildQueryString(RentalsAndProperties.Web.Models.PropertySearchQueryModel q, int page)
+    {
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(q.City)) parts.Add($"city={Uri.EscapeDataString(q.City)}");
+        if (q.MinPrice.HasValue) parts.Add($"minPrice={q.MinPrice}");
+        if (q.MaxPrice.HasValue) parts.Add($"maxPrice={q.MaxPrice}");
+        if (!string.IsNullOrWhiteSpace(q.BHKType)) parts.Add($"bhkType={q.BHKType}");
+        if (!string.IsNullOrWhiteSpace(q.PropertyType)) parts.Add($"propertyType={q.PropertyType}");
+        if (!string.IsNullOrWhiteSpace(q.ListingType)) parts.Add($"listingType={q.ListingType}");
+        if (!string.IsNullOrWhiteSpace(q.FurnishingType)) parts.Add($"furnishingType={q.FurnishingType}");
+        if (q.MinBedrooms.HasValue) parts.Add($"minBedrooms={q.MinBedrooms}");
+        if (q.MinBathrooms.HasValue) parts.Add($"minBathrooms={q.MinBathrooms}");
+        if (!string.IsNullOrWhiteSpace(q.SortBy)) parts.Add($"sortBy={q.SortBy}");
+        parts.Add($"page={page}");
+        return string.Join("&", parts);
+    }
+}
+
+@section HeadStyles {
+<style>
+/* ── Browse Page ── */
+.browse-page { padding-top:68px; min-height:100vh; }
+.browse-hero {
+    position:relative; min-height:220px;
+    background:var(--gradient-hero); overflow:hidden;
+    display:flex; align-items:center;
+}
+.browse-hero-inner { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:3rem 2rem; }
+.browse-hero-title { font-size:clamp(1.8rem,4vw,3rem); font-weight:800; margin:.75rem 0 .5rem; }
+.browse-hero-sub { color:var(--text-secondary); font-size:1rem; }
+
+/* ── Layout ── */
+.browse-layout { display:grid; grid-template-columns:280px 1fr; gap:0; max-width:1400px; margin:0 auto; min-height:calc(100vh - 280px); }
+
+/* ── Filter Sidebar ── */
+.filter-sidebar {
+    background:rgba(255,255,255,.92);
+    border-right:1px solid var(--border-subtle);
+    padding:1.5rem;
+    position:sticky; top:68px;
+    height:calc(100vh - 68px);
+    overflow-y:auto;
+    scrollbar-width:thin;
+}
+.filter-sidebar-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.25rem; }
+.filter-sidebar-title { font-size:1rem; font-weight:800; }
+.filter-clear-all {
+    font-size:.78rem; color:var(--accent-1); font-weight:600;
+    background:none; border:none; cursor:pointer; transition:color .2s;
+}
+.filter-clear-all:hover { color:#4f46e5; text-decoration:underline; }
+
+.filter-group { margin-bottom:1.5rem; padding-bottom:1.5rem; border-bottom:1px solid var(--border-subtle); }
+.filter-group:last-of-type { border-bottom:none; }
+.filter-label { display:block; font-size:.8rem; font-weight:700; color:var(--text-secondary); margin-bottom:.6rem; text-transform:uppercase; letter-spacing:.04em; }
+.filter-input {
+    width:100%; background:#fff; border:1.5px solid var(--border-subtle);
+    border-radius:var(--radius-md); padding:.6rem .85rem;
+    font-size:.9rem; font-family:'DM Sans',sans-serif; color:var(--text-primary);
+    outline:none; transition:border-color .2s, box-shadow .2s;
+}
+.filter-input:focus { border-color:var(--accent-1); box-shadow:0 0 0 3px rgba(108,99,255,.1); }
+.filter-select {
+    width:100%; background:#fff; border:1.5px solid var(--border-subtle);
+    border-radius:var(--radius-md); padding:.6rem .85rem;
+    font-size:.9rem; color:var(--text-primary); outline:none; cursor:pointer;
+    transition:border-color .2s;
+}
+.filter-select:focus { border-color:var(--accent-1); }
+
+/* Chip group */
+.filter-chip-group { display:flex; gap:.4rem; flex-wrap:wrap; }
+.filter-chip {
+    padding:.3rem .75rem; border-radius:100px;
+    font-size:.78rem; font-weight:600;
+    border:1.5px solid var(--border-subtle);
+    background:#fff; color:var(--text-secondary);
+    cursor:pointer; transition:all .15s; user-select:none;
+}
+.filter-chip:hover { border-color:var(--accent-1); color:var(--accent-1); }
+.filter-chip.active { background:var(--accent-1); border-color:var(--accent-1); color:#fff; }
+
+/* Price range */
+.price-range-inputs { display:flex; align-items:center; gap:.5rem; }
+.price-input-wrap { position:relative; flex:1; }
+.price-prefix { position:absolute; left:.75rem; top:50%; transform:translateY(-50%); color:var(--text-muted); font-weight:600; font-size:.85rem; pointer-events:none; }
+.price-input { padding-left:1.75rem !important; }
+.price-dash { color:var(--text-muted); font-weight:700; flex-shrink:0; }
+
+/* ── Results Panel ── */
+.results-panel { padding:1.5rem; min-width:0; }
+
+/* Toolbar */
+.results-toolbar {
+    display:flex; align-items:center; justify-content:space-between;
+    flex-wrap:wrap; gap:1rem; margin-bottom:1.25rem;
+}
+.results-summary { font-size:.9rem; color:var(--text-secondary); display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+.active-filter-tag {
+    display:inline-flex; align-items:center; gap:.35rem;
+    padding:.2rem .65rem; background:rgba(108,99,255,.1);
+    border:1px solid rgba(108,99,255,.25); border-radius:100px;
+    font-size:.78rem; font-weight:600; color:var(--accent-1);
+}
+.tag-remove { color:var(--accent-1); font-size:1rem; line-height:1; text-decoration:none; }
+.sort-wrap { display:flex; align-items:center; gap:.75rem; }
+.sort-label { font-size:.85rem; color:var(--text-muted); font-weight:500; }
+.sort-select { width:auto; min-width:160px; padding:.5rem .75rem; font-size:.85rem; }
+.filter-toggle-btn { display:none; }
+
+/* Results grid */
+.search-results-grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(280px, 1fr));
+    gap:1.25rem;
+}
+.search-card {
+    background:var(--bg-card);
+    border:1px solid var(--border-subtle);
+    border-radius:var(--radius-lg);
+    overflow:hidden;
+    transition:transform .3s var(--spring), border-color .3s, box-shadow .3s;
+    cursor:pointer;
+    box-shadow:0 2px 8px rgba(108,99,255,.05);
+}
+.search-card:hover { transform:translateY(-5px); border-color:var(--border-accent); box-shadow:var(--shadow-card); }
+.search-card-img {
+    height:190px; background:var(--gradient-card);
+    display:flex; align-items:center; justify-content:center;
+    position:relative; overflow:hidden;
+}
+.search-card-placeholder { font-size:3rem; }
+.search-card-badge {
+    position:absolute; top:.75rem; left:.75rem;
+    padding:.25rem .65rem; border-radius:100px;
+    font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+}
+.badge-rent { background:rgba(67,233,123,.2); border:1px solid rgba(67,233,123,.4); color:#43e97b; }
+.badge-sale { background:rgba(247,151,30,.2); border:1px solid rgba(247,151,30,.4); color:#f59e0b; }
+.search-card-photo-count { position:absolute; bottom:.6rem; right:.6rem; background:rgba(0,0,0,.6); color:#fff; font-size:.68rem; padding:.2rem .5rem; border-radius:100px; }
+
+.search-card-body { padding:1rem 1.1rem; }
+.search-card-price { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:700; background:var(--gradient-btn); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.price-mo { font-size:.65rem; font-weight:400; color:var(--text-muted); -webkit-text-fill-color:var(--text-muted); }
+.search-card-title { font-size:.9rem; font-weight:600; margin:.3rem 0; color:var(--text-primary); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.search-card-location { font-size:.8rem; color:var(--text-muted); margin-bottom:.5rem; }
+.search-card-chips { display:flex; gap:.35rem; flex-wrap:wrap; margin-bottom:.5rem; }
+.s-chip { padding:.18rem .55rem; background:rgba(99,102,241,.1); border:1px solid rgba(99,102,241,.2); border-radius:100px; font-size:.68rem; font-weight:600; color:#a78bfa; }
+.search-card-amenities { display:flex; gap:.75rem; margin-bottom:.75rem; }
+.amenity-mini { font-size:.78rem; color:var(--text-secondary); font-weight:500; }
+.search-card-footer {
+    display:flex; align-items:center; justify-content:space-between;
+    padding-top:.75rem; border-top:1px solid var(--border-subtle);
+}
+.search-card-owner { display:flex; align-items:center; gap:.4rem; }
+.owner-avatar-mini {
+    width:26px; height:26px; border-radius:50%;
+    background:var(--gradient-btn);
+    display:flex; align-items:center; justify-content:center;
+    font-size:.72rem; font-weight:700; color:#fff;
+}
+.owner-trust { font-size:.75rem; color:var(--text-muted); font-weight:500; }
+.btn-view-details { display:inline-flex; align-items:center; gap:.3rem; padding:.45rem .9rem; background:var(--gradient-btn); border:none; border-radius:var(--radius-md); font-size:.78rem; font-weight:600; color:#fff; cursor:pointer; transition:transform .2s var(--spring), box-shadow .2s; text-decoration:none; }
+.btn-view-details:hover { transform:translateY(-1px); box-shadow:var(--shadow-btn); }
+.btn-view-locked { background:rgba(0,0,0,.5); }
+
+/* No results */
+.no-results-state { text-align:center; padding:5rem 2rem; }
+.no-results-icon { font-size:4rem; margin-bottom:1rem; }
+.no-results-title { font-size:1.4rem; font-weight:700; margin-bottom:.5rem; }
+.no-results-sub { color:var(--text-muted); }
+
+/* Skeleton */
+.skeleton-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1.25rem; }
+.skeleton-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden; }
+.skeleton-img { height:190px; width:100%; }
+.skeleton-body { padding:1rem; }
+.skeleton-line { height:14px; border-radius:4px; margin-bottom:.6rem; }
+.w-40 { width:40%; }
+.w-55 { width:55%; }
+.w-70 { width:70%; }
+
+/* Pagination */
+.browse-pagination { display:flex; align-items:center; justify-content:center; gap:.75rem; flex-wrap:wrap; margin-top:2.5rem; padding-top:1.5rem; border-top:1px solid var(--border-subtle); }
+.pagination-pages { display:flex; gap:.4rem; }
+.pagination-num { display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; font-size:.875rem; font-weight:600; color:var(--text-secondary); border:1.5px solid var(--border-subtle); transition:all .2s; text-decoration:none; }
+.pagination-num.active { background:var(--accent-1); border-color:var(--accent-1); color:#fff; }
+.pagination-num:hover:not(.active) { border-color:var(--accent-1); color:var(--accent-1); }
+.pagination-btn { white-space:nowrap; }
+.pagination-info { font-size:.8rem; color:var(--text-muted); }
+
+/* ── Responsive ── */
+@@media(max-width:960px) {
+    .browse-layout { grid-template-columns:1fr; }
+    .filter-sidebar { position:fixed; left:0; top:68px; bottom:0; width:300px; z-index:200; transform:translateX(-100%); transition:transform .3s var(--spring); box-shadow:4px 0 24px rgba(0,0,0,.1); }
+    .filter-sidebar.open { transform:translateX(0); }
+    .filter-toggle-btn { display:flex; }
+    .results-panel { padding:1rem; }
+}
+@@media(max-width:600px) {
+    .search-results-grid { grid-template-columns:1fr; }
+    .results-toolbar { flex-direction:column; align-items:flex-start; }
+}
+</style>
+}
+
+@section Scripts {
+<script src="~/js/search.js" asp-append-version="true"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // ── Filter chip auto-submit on click ────────────────────────────────────
+    document.querySelectorAll('.filter-chip input[type="radio"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            // Update active visual state
+            const group = radio.closest('.filter-chip-group');
+            group?.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            radio.closest('.filter-chip')?.classList.add('active');
+        });
+    });
+
+    // ── Sort select ──────────────────────────────────────────────────────────
+    window.applySort = function(val) {
+        document.getElementById('sortByHidden').value = val;
+        document.getElementById('filterForm').submit();
+    };
+
+    // ── Clear all filters ────────────────────────────────────────────────────
+    document.getElementById('clearAllFilters')?.addEventListener('click', () => {
+        window.location.href = '/Property/Browse';
+    });
+
+    // ── Mobile filter sidebar toggle ─────────────────────────────────────────
+    const toggleBtn = document.getElementById('filterToggleBtn');
+    const sidebar   = document.getElementById('filterSidebar');
+    toggleBtn?.addEventListener('click', () => {
+        const isOpen = sidebar.classList.toggle('open');
+        toggleBtn.setAttribute('aria-expanded', isOpen);
+        toggleBtn.textContent = isOpen ? '✕ Close' : '🔧 Filters';
+    });
+
+    // Close sidebar on outside click (mobile)
+    document.addEventListener('click', e => {
+        if (window.innerWidth <= 960 &&
+            sidebar?.classList.contains('open') &&
+            !sidebar.contains(e.target) &&
+            e.target !== toggleBtn) {
+            sidebar.classList.remove('open');
+            toggleBtn?.setAttribute('aria-expanded', 'false');
+            toggleBtn.textContent = '🔧 Filters';
+        }
+    });
+
+    // ── Scroll animation for search cards ───────────────────────────────────
+    const cards = document.querySelectorAll('.search-card');
+    const obs = new IntersectionObserver(entries => {
+        entries.forEach((entry, i) => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                obs.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.08 });
+
+    cards.forEach((card, i) => {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(24px)';
+        card.style.transition = `opacity .4s ${i * 0.05}s ease, transform .4s ${i * 0.05}s ease`;
+        obs.observe(card);
+    });
+
+    // ── Submit form on filter changes (except radios, they need explicit submit) ──
+    document.getElementById('filterForm')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            e.target.closest('form')?.submit();
+        }
+    });
+});
+</script>
+}

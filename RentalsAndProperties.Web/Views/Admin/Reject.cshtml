@@ -1,0 +1,92 @@
+﻿@model RentalsAndProperties.Web.Models.ViewModels.RejectPropertyViewModel
+@{
+    ViewData["Title"] = "Reject Property";
+}
+
+<div class="auth-page">
+    <div class="hero-orb orb-1" aria-hidden="true"></div>
+    <div class="hero-orb orb-2" aria-hidden="true"></div>
+
+    <div class="auth-card" style="max-width:520px;" role="main">
+
+        <div class="auth-logo">
+            <div class="auth-logo-icon" style="background:linear-gradient(135deg,#ef4444,#dc2626);">❌</div>
+            <h1 class="auth-title">Reject Property</h1>
+            <p class="auth-subtitle">
+                You are about to reject: <strong>@Model.PropertyTitle</strong>
+            </p>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error">
+                <span>⚠</span>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <form asp-action="Reject" asp-controller="Admin" asp-route-id="@Model.PropertyId"
+              method="post" id="rejectForm" novalidate>
+            @Html.AntiForgeryToken()
+
+            <div class="form-group">
+                <textarea asp-for="Reason"
+                          id="Reason"
+                          class="form-control"
+                          placeholder=" "
+                          rows="5"
+                          required
+                          data-required="true"
+                          data-required-msg="Please provide a rejection reason."
+                          minlength="10"></textarea>
+                <label for="Reason" class="form-label">Rejection Reason</label>
+                <span asp-validation-for="Reason" class="invalid-feedback"></span>
+            </div>
+
+            <div class="alert alert-info" style="font-size:.85rem;">
+                <span>ℹ</span>
+                <span>This reason will be visible to the owner so they can fix and resubmit.</span>
+            </div>
+
+            <div class="flex gap-3">
+                <a href="/Admin" class="btn btn-secondary" style="flex:1;text-align:center;">
+                    ← Cancel
+                </a>
+                <button type="submit" class="btn btn-danger btn-lg" id="rejectBtn"
+                        style="flex:1;" onclick="return confirmReject()">
+                    <span class="btn-text">❌ Reject Property</span>
+                    <span class="btn-spinner"></span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('rejectForm');
+            const btn  = document.getElementById('rejectBtn');
+            Validator.attachLiveValidation(form);
+
+            form.addEventListener('submit', function(e) {
+                const reason = document.getElementById('Reason').value.trim();
+                if (reason.length < 10) {
+                    e.preventDefault();
+                    Toast.error('Rejection reason must be at least 10 characters.');
+                    return;
+                }
+                setButtonLoading(btn, true);
+            });
+        });
+
+        function confirmReject() {
+            return confirm('Are you sure you want to reject this property?');
+        }
+    </script>
+}

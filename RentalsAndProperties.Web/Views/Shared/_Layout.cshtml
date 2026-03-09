@@ -1,0 +1,182 @@
+﻿@using RentalsAndProperties.Web.Helpers
+@{
+    var isAuthenticated = SessionHelper.IsAuthenticated(Context.Session);
+    var fullName = SessionHelper.GetFullName(Context.Session);
+    var roles = SessionHelper.GetRoles(Context.Session);
+    var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
+    var isCustomerOnly = isAuthenticated && !isOwnerOrAdmin;
+    var initials = string.IsNullOrEmpty(fullName) ? "?" :
+                              string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                                                      .Take(2).Select(w => w[0].ToString().ToUpper()));
+    var welcomeMsg = TempData["WelcomeMessage"]?.ToString();
+    var successMsg = TempData["ToastSuccess"]?.ToString();
+    var currentPath = Context.Request.Path.ToString();
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@(ViewData["Title"] != null ? $"{ViewData["Title"]} – " : "")RentalsAndProperties</title>
+    <meta name="description" content="Find your perfect rental property with RentalsAndProperties.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/property.css" asp-append-version="true">
+    <link rel="stylesheet" href="~/css/media-search.css" asp-append-version="true">
+    @RenderSection("HeadStyles", required: false)
+</head>
+<body data-authenticated="@(isAuthenticated ? "true" : "false")">
+
+    @if (!string.IsNullOrEmpty(welcomeMsg))
+    {
+        <div id="welcomeMessage" data-message="@welcomeMsg" style="display:none;"></div>
+    }
+    @if (!string.IsNullOrEmpty(successMsg))
+    {
+        <div id="toastSuccess" data-message="@successMsg" style="display:none;"></div>
+    }
+
+    <!-- Navbar -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <a href="/" class="navbar-brand" aria-label="RentalsAndProperties Home">
+            🏠 RentalsAndProperties
+        </a>
+
+        <ul class="navbar-nav" role="list">
+            <li>
+                <a href="/" class="nav-link @(currentPath == "/" ? "active" : "")">Home</a>
+            </li>
+            <li>
+                <a href="/Property/Browse"
+                   class="nav-link @(currentPath.StartsWith("/Property/Browse") ? "active" : "")">
+                    Browse
+                </a>
+            </li>
+
+            @if (isAuthenticated)
+            {
+                @if (isOwnerOrAdmin)
+                {
+                    <li>
+                        <a href="/Property/Dashboard"
+                           class="nav-link @(currentPath.StartsWith("/Property/Dashboard") || currentPath.StartsWith("/Property/Create") || currentPath.StartsWith("/Property/Edit") ? "active" : "")">
+                            My Listings
+                        </a>
+                    </li>
+                }
+                @if (roles.Contains("Admin"))
+                {
+                    <li>
+                        <a href="/Admin"
+                           class="nav-link @(currentPath.StartsWith("/Admin") ? "active" : "")"
+                           style="color:#f59e0b;">
+                            🛡 Admin
+                        </a>
+                    </li>
+                }
+
+                <!-- Profile Dropdown -->
+                <li>
+                    <div class="profile-dropdown" id="profileDropdown">
+                        <div class="profile-trigger" role="button" aria-haspopup="true"
+                             aria-expanded="false" tabindex="0">
+                            <div class="profile-avatar" aria-hidden="true">@initials</div>
+                            <span class="profile-name">@fullName</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                <polyline points="6 9 12 15 18 9" />
+                            </svg>
+                        </div>
+
+                        <div class="dropdown-menu" role="menu">
+                            <div style="padding:.4rem .75rem .3rem;font-size:.72rem;
+                                            color:var(--text-muted);text-transform:uppercase;
+                                            letter-spacing:.06em;">
+                                @string.Join(", ", roles)
+                            </div>
+                            <div class="dropdown-divider"></div>
+
+                            @if (isOwnerOrAdmin)
+                            {
+                                <a href="/Property/Dashboard" class="dropdown-item" role="menuitem">
+                                    <span>🏠</span> My Properties
+                                </a>
+                                <a href="/Property/Create" class="dropdown-item" role="menuitem">
+                                    <span>➕</span> Add Property
+                                </a>
+
+                                @if (roles.Contains("Admin"))
+                                {
+                                    <a href="/Admin" class="dropdown-item" role="menuitem">
+                                        <span>🛡</span> Admin Panel
+                                    </a>
+                                }
+                            }
+                            else
+                            {
+                                <!-- Customer: Become an Owner CTA -->
+                                <div style="padding:.6rem .75rem;">
+                                    <div style="font-size:.78rem;color:var(--text-secondary);
+                                                        margin-bottom:.6rem;line-height:1.5;">
+                                        Want to list a property?
+                                    </div>
+                                    <form asp-controller="Auth" asp-action="BecomeOwner"
+                                          method="post" style="margin:0;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="become-owner-btn"
+                                                onclick="return confirm('Become an Owner? You can start listing properties immediately.')">
+                                            🏡 Become an Owner
+                                        </button>
+                                    </form>
+                                </div>
+                            }
+
+                            <div class="dropdown-divider"></div>
+                            <form asp-action="Logout" asp-controller="Auth" method="post" style="margin:0;">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="dropdown-item danger" role="menuitem">
+                                    <span>🚪</span> Sign Out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </li>
+            }
+            else
+            {
+                <li><a href="/Auth/Login" class="nav-link">Sign In</a></li>
+                <li>
+                    <a href="/Auth/Register" class="btn-nav-auth">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5">
+                            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <line x1="19" y1="8" x2="19" y2="14" />
+                            <line x1="22" y1="11" x2="16" y2="11" />
+                        </svg>
+                        Get Started
+                    </a>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <main id="main-content">@RenderBody()</main>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/property.js" asp-append-version="true"></script>
+    <script src="~/js/property-additions.js" asp-append-version="true"></script>
+    @RenderSection("Scripts", required: false)
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const s = document.getElementById('toastSuccess');
+            if (s) { Toast.success(s.dataset.message); s.remove(); }
+            const w = document.getElementById('welcomeMessage');
+            if (w) { Toast.success(w.dataset.message); w.remove(); }
+        });
+    </script>
+</body>
+</html>

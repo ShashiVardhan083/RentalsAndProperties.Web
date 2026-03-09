@@ -1,0 +1,25 @@
+﻿@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="auth-page">
+    <div class="hero-orb orb-1" aria-hidden="true"></div>
+    <div class="hero-orb orb-2" aria-hidden="true"></div>
+
+    <div class="auth-card" style="text-align:center;" role="main" aria-labelledby="deniedTitle">
+        <div class="auth-logo">
+            <div class="auth-logo-icon" aria-hidden="true">🚫</div>
+            <h1 class="auth-title" id="deniedTitle">Access Denied</h1>
+            <p class="auth-subtitle">
+                You don't have permission to access this page.
+                This area requires a different role or account type.
+            </p>
+        </div>
+
+        <div class="flex gap-3 justify-center" style="flex-wrap:wrap;margin-top:1.5rem;">
+            <a href="/" class="btn btn-primary">← Go Home</a>
+            <a href="/Auth/Login" class="btn btn-secondary">Sign In with Different Account</a>
+        </div>
+    </div>
+</div>

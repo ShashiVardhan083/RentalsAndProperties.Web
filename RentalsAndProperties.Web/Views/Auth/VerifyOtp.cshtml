@@ -1,0 +1,289 @@
+﻿@model RentalsAndProperties.Web.Models.ViewModels.OtpVerifyViewModel
+@{
+    ViewData["Title"] = "Verify & Complete Profile";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var devOtp = ViewBag.DevOtp?.ToString();
+}
+
+<div class="auth-page">
+    <div class="hero-orb orb-1" aria-hidden="true"></div>
+    <div class="hero-orb orb-2" aria-hidden="true"></div>
+
+    <div class="auth-card" style="max-width:500px;" role="main" aria-labelledby="verifyTitle">
+
+        <!-- Progress bar -->
+        <div class="auth-progress" id="authProgress" style="width:66%;"
+             role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"
+             aria-label="Step 2 of 3"></div>
+
+        <!-- Step dots -->
+        <div class="step-indicators" aria-label="Registration steps">
+            <div class="step-dot done" title="Step 1: Phone ✓"></div>
+            <div class="step-dot active" id="stepDot2" title="Step 2: Verify OTP"></div>
+            <div class="step-dot" id="stepDot3" title="Step 3: Profile"></div>
+        </div>
+
+        <!-- Title -->
+        <div class="auth-logo">
+            <div class="auth-logo-icon" id="stepIcon" aria-hidden="true">🔐</div>
+            <h1 class="auth-title" id="verifyTitle">Verify Your Number</h1>
+            <p class="auth-subtitle" id="verifySubtitle">
+                We sent a 6-digit OTP to
+                <strong>@Model.PhoneNumber</strong>
+            </p>
+        </div>
+
+        <!-- Dev OTP Hint (remove in production) -->
+        @if (!string.IsNullOrEmpty(devOtp))
+        {
+            <div class="dev-otp-hint" role="note" aria-label="Development mode OTP hint">
+                <span>🧪 Dev Mode OTP:</span>
+                <span class="dev-otp-code" title="Click to auto-fill" tabindex="0" role="button"
+                      aria-label="Click to auto-fill OTP @devOtp">@devOtp</span>
+            </div>
+        }
+
+        <!-- Server errors -->
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error" role="alert" id="serverErrors">
+                <span aria-hidden="true">⚠</span>
+                <div>
+                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <div>@error.ErrorMessage</div>
+                    }
+                </div>
+            </div>
+        }
+
+        <form asp-action="VerifyOtp" asp-controller="Auth" method="post"
+              id="verifyForm" novalidate autocomplete="off">
+
+            @Html.AntiForgeryToken()
+
+            <!-- Hidden phone -->
+            <input type="hidden" asp-for="PhoneNumber" />
+
+            <!-- ══ STEP 2: OTP ══════════════════════════════════ -->
+            <div id="stepOtp">
+
+                <!-- OTP digit inputs -->
+                <div class="otp-inputs" id="otpInputs" role="group" aria-label="Enter 6-digit OTP">
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <input type="text"
+                               class="otp-digit"
+                               maxlength="1"
+                               inputmode="numeric"
+                               pattern="\d"
+                               autocomplete="one-time-code"
+                               aria-label="OTP digit @i" />
+                    }
+                </div>
+
+                <!-- Hidden aggregated OTP field -->
+                <input type="hidden" asp-for="OtpCode" id="OtpCode" />
+                <span asp-validation-for="OtpCode" class="invalid-feedback text-center" id="otpError" style="display:block;text-align:center;margin-bottom:.5rem;"></span>
+
+                <button type="button" class="btn btn-primary btn-block btn-lg" id="verifyOtpBtn">
+                    <span class="btn-text">Verify OTP →</span>
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                </button>
+
+                <!-- Resend timer -->
+                <div class="resend-timer" role="status" aria-live="polite">
+                    Resend OTP in <span id="timerCount">60</span>s
+                </div>
+            </div>
+
+            <!-- ══ STEP 3: Profile ════════════════════════════════ -->
+            <div id="stepProfile" style="display:none;">
+
+                <!-- Full Name -->
+                <div class="form-group">
+                    <input type="text"
+                           asp-for="FullName"
+                           id="FullName"
+                           class="form-control"
+                           placeholder=" "
+                           autocomplete="name"
+                           required
+                           data-required="true"
+                           data-required-msg="Full name is required." />
+                    <label for="FullName" class="form-label">Full Name</label>
+                    <span asp-validation-for="FullName" class="invalid-feedback"></span>
+                </div>
+
+                <!-- Email (optional) -->
+                <div class="form-group">
+                    <input type="email"
+                           asp-for="Email"
+                           id="Email"
+                           class="form-control"
+                           placeholder=" "
+                           autocomplete="email"
+                           inputmode="email" />
+                    <label for="Email" class="form-label">Email (optional)</label>
+                    <span asp-validation-for="Email" class="invalid-feedback"></span>
+                </div>
+
+                <!-- Password (partial with strength meter) -->
+                @await Html.PartialAsync("_PasswordInput", (object)null!,
+                new ViewDataDictionary(ViewData) {
+                                { "FieldId", "Password" },
+                                { "FieldName", "Password" },
+                                { "Label", "Create Password" },
+                                { "ShowStrength", true }
+                                })
+                <span asp-validation-for="Password" class="invalid-feedback"></span>
+
+                <!-- Confirm Password -->
+                @await Html.PartialAsync("_PasswordInput", (object)null!,
+                                new ViewDataDictionary(ViewData) {
+                                { "FieldId", "ConfirmPassword" },
+                                { "FieldName", "ConfirmPassword" },
+                                { "Label", "Confirm Password" },
+                                { "ShowStrength", false }
+                                })
+                <span asp-validation-for="ConfirmPassword" class="invalid-feedback"></span>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="completeBtn">
+                    <span class="btn-text">🎉 Create My Account</span>
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                </button>
+
+                <button type="button" class="btn btn-ghost btn-block mt-1" id="backToOtpBtn">
+                    ← Back
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ── OTP Input ────────────────────────────────────────────────
+            const otpControl = initOtpInputs('#otpInputs', 'OtpCode');
+            startResendTimer('#resendOtpBtn', '#timerCount', 60);
+
+            // ── Step management ──────────────────────────────────────────
+            let currentStep = 'otp'; // 'otp' | 'profile'
+
+            const stepOtp     = document.getElementById('stepOtp');
+            const stepProfile = document.getElementById('stepProfile');
+            const progress    = document.getElementById('authProgress');
+            const titleEl     = document.getElementById('verifyTitle');
+            const subtitleEl  = document.getElementById('verifySubtitle');
+            const iconEl      = document.getElementById('stepIcon');
+            const dot2        = document.getElementById('stepDot2');
+            const dot3        = document.getElementById('stepDot3');
+
+            function goToProfile() {
+                currentStep = 'profile';
+                stepOtp.style.display = 'none';
+                stepProfile.style.display = 'block';
+
+                progress.style.width = '100%';
+                progress.setAttribute('aria-valuenow', '100');
+                titleEl.textContent    = 'Complete Your Profile';
+                subtitleEl.textContent = 'Almost there! Just a few more details.';
+                iconEl.textContent     = '👤';
+
+                dot2.classList.remove('active');
+                dot2.classList.add('done');
+                dot3.classList.add('active');
+
+                Validator.attachLiveValidation(stepProfile);
+                initPasswordToggles();
+                document.getElementById('FullName')?.focus();
+            }
+
+            function goToOtp() {
+                currentStep = 'otp';
+                stepOtp.style.display = 'block';
+                stepProfile.style.display = 'none';
+
+                progress.style.width = '66%';
+                progress.setAttribute('aria-valuenow', '66');
+                titleEl.textContent    = 'Verify Your Number';
+                subtitleEl.innerHTML   = 'Enter the OTP sent to <strong>@Model.PhoneNumber</strong>';
+                iconEl.textContent     = '🔐';
+
+                dot2.classList.remove('done');
+                dot2.classList.add('active');
+                dot3.classList.remove('active', 'done');
+            }
+
+            // ── Verify OTP button ────────────────────────────────────────
+            document.getElementById('verifyOtpBtn')?.addEventListener('click', function () {
+                const otp = document.getElementById('OtpCode').value.trim();
+                const errEl = document.getElementById('otpError');
+
+                if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+                    otpControl?.shake();
+                    errEl.textContent = '⚠ Enter all 6 digits of your OTP.';
+                    return;
+                }
+
+                errEl.textContent = '';
+                setButtonLoading(this, true);
+
+                // Simulate brief processing (real verify happens on final submit)
+                setTimeout(() => {
+                    setButtonLoading(document.getElementById('verifyOtpBtn'), false);
+                    goToProfile();
+                }, 600);
+            });
+
+            // ── Back button ──────────────────────────────────────────────
+            document.getElementById('backToOtpBtn')?.addEventListener('click', goToOtp);
+
+            // ── Final form submit with client-side validation ────────────
+            document.getElementById('verifyForm')?.addEventListener('submit', function (e) {
+                if (currentStep !== 'profile') {
+                    e.preventDefault();
+                    return;
+                }
+
+                // Validate profile fields
+                const profileInputs = stepProfile.querySelectorAll('.form-control[required]');
+                let hasErrors = false;
+
+                profileInputs.forEach(input => {
+                    if (!Validator.validate(input)) hasErrors = true;
+                });
+
+                // Confirm password cross-field check
+                const pwd     = document.getElementById('Password');
+                const confirm = document.getElementById('ConfirmPassword');
+                if (pwd && confirm && pwd.value !== confirm.value) {
+                    Validator.showError(confirm, 'Passwords do not match.');
+                    hasErrors = true;
+                }
+
+                if (hasErrors) {
+                    e.preventDefault();
+                    Toast.error('Please fix the errors before submitting.');
+                    stepProfile.querySelector('.is-invalid')?.focus();
+                    return;
+                }
+
+                setButtonLoading(document.getElementById('completeBtn'), true);
+            });
+
+            // If server returned errors (model invalid), go to profile step if OTP was correct
+            @if (!ViewData.ModelState.IsValid && !string.IsNullOrEmpty(Model.OtpCode))
+            {
+                    <text>
+                    // Server rejected with profile errors — jump back to profile step
+                    setTimeout(() => goToProfile(), 100);
+                    </text>
+            }
+        });
+    </script>
+}
