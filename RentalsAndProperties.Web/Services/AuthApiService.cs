@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using RentalsAndProperties.Web.Models;
+using RentalsAndProperties.Web.Models.Dtos;
 using static System.Net.WebRequestMethods;
 
 namespace RentalsAndProperties.Web.Services
@@ -24,14 +25,14 @@ namespace RentalsAndProperties.Web.Services
         }
 
         //POST /api/auth/register – send OTP to phone
-        public async Task<ApiResponseModel<OtpSendResultModel>?> SendOtpAsync(string phoneNumber)
+        public async Task<ApiResponseModel<OtpSendResultDto>?> SendOtpAsync(string phoneNumber)
         {
             var payload = new { phoneNumber };
-            return await PostAsync<OtpSendResultModel>("api/auth/register", payload);
+            return await PostAsync<OtpSendResultDto>("api/auth/register", payload);
         }
 
         //POST /api/auth/verify-otp – verify OTP + create account
-        public async Task<ApiResponseModel<AuthResponseModel>?> VerifyOtpAsync(
+        public async Task<ApiResponseModel<AuthResponseDto>?> VerifyOtpAsync(
             string phoneNumber,
             string otpCode,
             string fullName,
@@ -48,16 +49,16 @@ namespace RentalsAndProperties.Web.Services
                 password,
                 confirmPassword
             };
-            return await PostAsync<AuthResponseModel>("api/auth/verify-otp", payload);
+            return await PostAsync<AuthResponseDto>("api/auth/verify-otp", payload);
         }
 
         //POST /api/auth/login – password login
-        public async Task<ApiResponseModel<AuthResponseModel>?> LoginAsync(
+        public async Task<ApiResponseModel<AuthResponseDto>?> LoginAsync(
             string phoneNumber,
             string password)
         {
             var payload = new { phoneNumber, password };
-            return await PostAsync<AuthResponseModel>("api/auth/login", payload);
+            return await PostAsync<AuthResponseDto>("api/auth/login", payload);
         }
 
         //POST /api/auth/logout
@@ -70,14 +71,17 @@ namespace RentalsAndProperties.Web.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<ApiResponseModel<AuthResponseModel>?> BecomeOwnerAsync()
+        public async Task<ApiResponseModel<AuthResponseDto>?> BecomeOwnerAsync()
         {
             try
             {
-                var response = await HttpClient.PostAsync("api/auth/become-owner", null);
+                var content = new StringContent("{}", Encoding.UTF8, "application/json");
+
+                var response = await HttpClient.PostAsync("api/auth/become-owner", content);
+
                 var body = await response.Content.ReadAsStringAsync();
 
-                return JsonSerializer.Deserialize<ApiResponseModel<AuthResponseModel>>(body, JsonOpts);
+                return JsonSerializer.Deserialize<ApiResponseModel<AuthResponseDto>>(body, JsonOpts);
             }
             catch (Exception ex)
             {

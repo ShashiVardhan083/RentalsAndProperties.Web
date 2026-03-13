@@ -54,9 +54,24 @@
                     Browse
                 </a>
             </li>
+            
+            
 
             @if (isAuthenticated)
             {
+                <li>
+                    <a href="/Transaction/MyTransactions"
+                       class="nav-link @(currentPath.StartsWith("/Transaction") ? "active" : "")">
+                        My Deals
+                    </a>
+                </li>
+                <li>
+                    <a href="/Chat"
+                       class="nav-link @(currentPath.StartsWith("/Chat") ? "active" : "")">
+                        💬 Messages
+                        <span class="chat-unread-badge" style="display:none;background:var(--accent-1);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;align-items:center;justify-content:center;margin-left:.3rem;"></span>
+                    </a>
+                </li>
                 @if (isOwnerOrAdmin)
                 {
                     <li>
@@ -72,7 +87,24 @@
                         <a href="/Admin"
                            class="nav-link @(currentPath.StartsWith("/Admin") ? "active" : "")"
                            style="color:#f59e0b;">
-                            🛡 Admin
+                            🛡 Property Approvals
+                        </a>
+                    </li>
+                }
+                @if (roles.Contains("Admin"))
+                {
+                    <li>
+                        <a href="/Admin/Dashboard"
+                           class="nav-link @(currentPath == "/Admin/Dashboard" ? "active" : "")"
+                           style="color:#a78bfa;">
+                            📊 Analytics
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/Admin/Reports"
+                           class="nav-link @(currentPath.StartsWith("/Admin/Reports") ? "active" : "")"
+                           style="color:#ef4444;">
+                            🚩 Reports
                         </a>
                     </li>
                 }
@@ -91,48 +123,12 @@
                         </div>
 
                         <div class="dropdown-menu" role="menu">
-                            <div style="padding:.4rem .75rem .3rem;font-size:.72rem;
-                                            color:var(--text-muted);text-transform:uppercase;
-                                            letter-spacing:.06em;">
+                            <div style="padding:.5rem .75rem;font-size:.82rem;font-weight:600;color:var(--text-primary);">
+                                @fullName
+                            </div>
+                            <div style="padding:.1rem .75rem .4rem;font-size:.72rem;color:var(--text-muted);">
                                 @string.Join(", ", roles)
                             </div>
-                            <div class="dropdown-divider"></div>
-
-                            @if (isOwnerOrAdmin)
-                            {
-                                <a href="/Property/Dashboard" class="dropdown-item" role="menuitem">
-                                    <span>🏠</span> My Properties
-                                </a>
-                                <a href="/Property/Create" class="dropdown-item" role="menuitem">
-                                    <span>➕</span> Add Property
-                                </a>
-
-                                @if (roles.Contains("Admin"))
-                                {
-                                    <a href="/Admin" class="dropdown-item" role="menuitem">
-                                        <span>🛡</span> Admin Panel
-                                    </a>
-                                }
-                            }
-                            else
-                            {
-                                <!-- Customer: Become an Owner CTA -->
-                                <div style="padding:.6rem .75rem;">
-                                    <div style="font-size:.78rem;color:var(--text-secondary);
-                                                        margin-bottom:.6rem;line-height:1.5;">
-                                        Want to list a property?
-                                    </div>
-                                    <form asp-controller="Auth" asp-action="BecomeOwner"
-                                          method="post" style="margin:0;">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="become-owner-btn"
-                                                onclick="return confirm('Become an Owner? You can start listing properties immediately.')">
-                                            🏡 Become an Owner
-                                        </button>
-                                    </form>
-                                </div>
-                            }
-
                             <div class="dropdown-divider"></div>
                             <form asp-action="Logout" asp-controller="Auth" method="post" style="margin:0;">
                                 @Html.AntiForgeryToken()
@@ -167,7 +163,6 @@
 
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script src="~/js/property.js" asp-append-version="true"></script>
-    <script src="~/js/property-additions.js" asp-append-version="true"></script>
     @RenderSection("Scripts", required: false)
 
     <script>

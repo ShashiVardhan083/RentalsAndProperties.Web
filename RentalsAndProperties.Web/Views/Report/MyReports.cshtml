@@ -1,0 +1,104 @@
+﻿@model List<RentalsAndProperties.Web.ViewModels.Report.ReportViewModel>
+@{
+    ViewData["Title"] = "My Reports";
+}
+
+<div class="dashboard-page">
+    <div class="dashboard-header">
+        <div class="dashboard-header-inner">
+            <div>
+                <h1 class="dashboard-title">My Reports</h1>
+                <p class="dashboard-subtitle">@Model.Count report@(Model.Count != 1 ? "s" : "") submitted</p>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-body">
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">🚩</div>
+                <h3>No Reports Yet</h3>
+                <p>You haven't submitted any reports.</p>
+            </div>
+        }
+        else
+        {
+            <div class="dash-table-wrap">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td><span class="s-chip">@r.TargetType</span></td>
+                                <td>@r.Reason</td>
+                                <td>
+                                    <span class="status-pill status-@r.Status.ToLower()">@r.Status</span>
+                                </td>
+                                <td style="font-size:.8rem;color:var(--text-muted);">
+                                    @r.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@section HeadStyles {
+    <style>
+        .dashboard-page {
+            padding-top: 68px;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            background: var(--gradient-hero);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 2.5rem 2rem;
+        }
+
+        .dashboard-header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dashboard-body {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .status-pending {
+            background: rgba(247,151,30,.15);
+            color: #f59e0b;
+        }
+
+        .status-resolved {
+            background: rgba(67,233,123,.15);
+            color: #43e97b;
+        }
+
+        .status-rejected {
+            background: rgba(239,68,68,.15);
+            color: #fca5a5;
+        }
+
+        .status-underreview {
+            background: rgba(99,102,241,.15);
+            color: #a78bfa;
+        }
+    </style>
+}

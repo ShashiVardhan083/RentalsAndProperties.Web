@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
 using RentalsAndProperties.Web.Helpers;
-using RentalsAndProperties.Web.Models.ViewModels;
 using RentalsAndProperties.Web.Services;
+using RentalsAndProperties.Web.ViewModels.Auth;
 
 namespace RentalsAndProperties.Web.Controllers
 {
@@ -179,18 +179,26 @@ namespace RentalsAndProperties.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [JwtAuthorize]                   // must be logged in
+        [JwtAuthorize]
         public async Task<IActionResult> BecomeOwner()
         {
             var result = await AuthApi.BecomeOwnerAsync();
 
+            Logger.LogInformation("BecomeOwner Success: {success}", result?.Success);
+            Logger.LogInformation("BecomeOwner Message: {message}", result?.Message);
+            Logger.LogInformation("BecomeOwner Data Null?: {dataNull}", result?.Data == null);
+
             if (result == null || !result.Success || result.Data == null)
             {
                 TempData["Error"] = result?.Message ?? "Something went wrong. Please try again.";
+                // Redirect back to wherever they came from
+                var referer = Request.Headers["Referer"].ToString();
+                if (!string.IsNullOrEmpty(referer) && Url.IsLocalUrl(referer))
+                    return Redirect(referer);
                 return RedirectToAction("Index", "Home");
             }
 
-            // Swap the stored JWT and refresh session roles
+            // Refresh session with new token + roles
             SessionHelper.SetAuthSession(
                 HttpContext.Session,
                 result.Data.Token,
@@ -201,9 +209,7 @@ namespace RentalsAndProperties.Web.Controllers
                 result.Data.ExpiresAt
             );
 
-            TempData["Success"] =
-                " You're now an Owner! Start listing your properties.";
-
+            TempData["Success"] = " You're now an Owner! Start listing your properties.";
             return RedirectToAction("Dashboard", "Property");
         }
         // Access Denied

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using RentalsAndProperties.Web.Models;
+using RentalsAndProperties.Web.Models.Dtos;
 
 namespace RentalsAndProperties.Web.Services
 {
@@ -7,24 +8,47 @@ namespace RentalsAndProperties.Web.Services
     {
         private readonly HttpClient HttpClient;
         private readonly ILogger<PropertySearchApiService> Logger;
+        private readonly string ApiBase;
 
         private static readonly JsonSerializerOptions JsonOpts = new()
         {
             PropertyNameCaseInsensitive = true
         };
 
-        public PropertySearchApiService(HttpClient http, ILogger<PropertySearchApiService> logger)
+        public PropertySearchApiService(HttpClient http, ILogger<PropertySearchApiService> logger, IConfiguration config)
         {
             HttpClient = http;
             Logger = logger;
+            ApiBase = config["ApiSettings:BaseUrl"]?.TrimEnd('/') ?? "";
         }
 
-        public async Task<ApiResponseModel<PropertySearchResultModel>?> SearchAsync(
-            PropertySearchQueryModel query)
+        private string ResolveImageUrl(string? url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return "";
+            if (url.StartsWith("http://") || url.StartsWith("https://")) return url;
+            return ApiBase + "/" + url.TrimStart('/');
+        }
+
+        public async Task<ApiResponseModel<PropertySearchResultDto>?> SearchAsync(
+            PropertySearchQueryDto query)
         {
             var qs = BuildQueryString(query);
             var response = await HttpClient.GetAsync($"api/property/search?{qs}");
-            return await ReadAsync<PropertySearchResultModel>(response);
+            var result = await ReadAsync<PropertySearchResultDto>(response);
+
+            // ✅ Fix image URLs for Browse page cards
+            if (result?.Data?.Properties != null)
+            {
+                foreach (var prop in result.Data.Properties)
+                {
+                    prop.PrimaryImageUrl = ResolveImageUrl(prop.PrimaryImageUrl);
+                    prop.ImageUrls = prop.ImageUrls
+                        .Select(url => ResolveImageUrl(url))
+                        .ToList();
+                }
+            }
+
+            return result;
         }
 
         public async Task<ApiResponseModel<List<string>>?> GetCitiesAsync()
@@ -33,7 +57,7 @@ namespace RentalsAndProperties.Web.Services
             return await ReadAsync<List<string>>(response);
         }
 
-        private static string BuildQueryString(PropertySearchQueryModel q)
+        private static string BuildQueryString(PropertySearchQueryDto q)
         {
             var parts = new List<string>();
             if (!string.IsNullOrWhiteSpace(q.City))

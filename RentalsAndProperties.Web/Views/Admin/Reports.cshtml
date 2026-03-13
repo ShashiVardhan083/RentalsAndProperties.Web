@@ -1,0 +1,232 @@
+﻿@model List<RentalsAndProperties.Web.ViewModels.Report.ReportViewModel>
+@{
+    ViewData["Title"] = "Admin – Reports";
+    var currentFilter = ViewBag.Filter as string ?? "";
+}
+
+<div class="dashboard-page">
+    <div class="dashboard-header" style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);">
+        <div class="dashboard-header-inner">
+            <div>
+                <div class="admin-badge">🛡 Admin Panel</div>
+                <h1 class="dashboard-title" style="color:#fff;">Reports</h1>
+                <p class="dashboard-subtitle" style="color:rgba(255,255,255,.7);">
+                    @Model.Count report@(Model.Count != 1 ? "s" : "") found
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-body">
+
+        @if (!string.IsNullOrEmpty(ViewBag.Success?.ToString()))
+        {
+            <div class="alert alert-success">✓ @ViewBag.Success</div>
+        }
+        @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
+        {
+            <div class="alert alert-error">⚠ @ViewBag.Error</div>
+        }
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            @foreach (var f in new[] {
+                        ("", "All"), ("Pending", "Pending"), ("Resolved", "Resolved"),
+                        ("Recent", "Recent"), ("Oldest", "Oldest")
+                        })
+            {
+                <a href="/Admin/Reports@(string.IsNullOrEmpty(f.Item1) ? "" : $"?filter={f.Item1}")"
+                   class="filter-pill @(currentFilter == f.Item1 ? "active" : "")">
+                    @f.Item2
+                </a>
+            }
+        </div>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">✅</div>
+                <h3>No Reports</h3>
+                <p>No reports match the selected filter.</p>
+            </div>
+        }
+        else
+        {
+            <div class="dash-table-wrap">
+                <table class="dash-table">
+                    <thead>
+                        <tr>
+                            <th>Reporter</th>
+                            <th>Type</th>
+                            <th>Reason</th>
+                            <th>Description</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="font-weight:600;font-size:.875rem;">@r.ReporterName</div>
+                                </td>
+                                <td><span class="s-chip">@r.TargetType</span></td>
+                                <td style="font-weight:500;">@r.Reason</td>
+                                <td style="font-size:.82rem;color:var(--text-secondary);max-width:200px;">
+                                    @(r.Description?.Length > 60 ? r.Description[..60] + "…" : r.Description ?? "—")
+                                </td>
+                                <td>
+                                    <span class="status-pill status-@r.Status.ToLower()">@r.Status</span>
+                                </td>
+                                <td style="font-size:.8rem;color:var(--text-muted);">
+                                    @r.CreatedAt.ToString("MMM dd, yyyy")
+                                </td>
+                                <td>
+                                    @if (r.Status == "Pending" || r.Status == "UnderReview")
+                                    {
+                                        <div style="display:flex;gap:.5rem;">
+                                            <form asp-controller="Admin" asp-action="ResolveReport"
+                                                  asp-route-id="@r.ReportId" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm"
+                                                        style="background:rgba(67,233,123,.15);color:#43e97b;border:1px solid rgba(67,233,123,.3);"
+                                                        onclick="return confirm('Resolve this report?')">
+                                                    ✓ Resolve
+                                                </button>
+                                            </form>
+                                            <form asp-controller="Admin" asp-action="RejectReport"
+                                                  asp-route-id="@r.ReportId" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-danger"
+                                                        onclick="return confirm('Reject this report?')">
+                                                    ✕ Reject
+                                                </button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span style="font-size:.78rem;color:var(--text-muted);">
+                                            @(r.ResolvedAt?.ToString("MMM dd") ?? "—")
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section HeadStyles {
+    <style>
+        .dashboard-page {
+            padding-top: 68px;
+            min-height: 100vh;
+        }
+
+        .dashboard-header {
+            padding: 2.5rem 2rem;
+        }
+
+        .dashboard-header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+        }
+
+        .admin-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .3rem .85rem;
+            background: rgba(255,255,255,.1);
+            border: 1px solid rgba(255,255,255,.2);
+            border-radius: 100px;
+            font-size: .75rem;
+            font-weight: 700;
+            color: rgba(255,255,255,.9);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: .75rem;
+        }
+
+        .dashboard-title {
+            font-size: 1.75rem;
+            font-weight: 800;
+        }
+
+        .dashboard-body {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: .6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-pill {
+            padding: .4rem 1rem;
+            border-radius: 100px;
+            font-size: .8rem;
+            font-weight: 600;
+            border: 1.5px solid var(--border-subtle);
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: all .15s;
+        }
+
+            .filter-pill:hover, .filter-pill.active {
+                background: var(--accent-1);
+                border-color: var(--accent-1);
+                color: #fff;
+            }
+
+        .status-pending {
+            background: rgba(247,151,30,.15);
+            color: #f59e0b;
+        }
+
+        .status-resolved {
+            background: rgba(67,233,123,.15);
+            color: #43e97b;
+        }
+
+        .status-rejected {
+            background: rgba(239,68,68,.15);
+            color: #fca5a5;
+        }
+
+        .status-underreview {
+            background: rgba(99,102,241,.15);
+            color: #a78bfa;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 5rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: .5rem;
+        }
+
+        .empty-state p {
+            color: var(--text-secondary);
+        }
+    </style>
+}

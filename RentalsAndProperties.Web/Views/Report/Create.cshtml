@@ -1,0 +1,103 @@
+﻿@model RentalsAndProperties.Web.ViewModels.Report.CreateReportViewModel
+@{
+    ViewData["Title"] = "Submit Report";
+}
+
+<div class="form-page" style="padding-top:88px;min-height:100vh;">
+    <div class="form-page-header">
+        <div class="form-page-header-inner">
+            <a href="javascript:history.back()" class="back-link">← Back</a>
+            <h1 class="form-page-title">Submit a Report</h1>
+            <p class="form-page-subtitle">Help us keep the platform safe and trustworthy.</p>
+        </div>
+    </div>
+
+    <div class="form-page-body">
+        <form asp-action="Create" asp-controller="Report" method="post" id="reportForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="TargetType" />
+            <input type="hidden" asp-for="TargetId" />
+
+            @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
+            {
+                <div class="alert alert-error">⚠ @ViewBag.Error</div>
+            }
+
+            <div class="form-section" style="max-width:600px;margin:0 auto;">
+                <h2 class="form-section-title">📋 Report Details</h2>
+
+                @if (!string.IsNullOrEmpty(Model.TargetTitle))
+                {
+                    <div class="report-target-info">
+                        <span class="report-target-label">Reporting:</span>
+                        <span class="report-target-type">@Model.TargetType</span>
+                        <span class="report-target-name">@Model.TargetTitle</span>
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label class="form-label form-label-select">Reason for Report</label>
+                    <select asp-for="Reason" class="form-control form-select" required>
+                        <option value="">Select a reason…</option>
+                        <option value="Spam">Spam or misleading content</option>
+                        <option value="FakeProperty">Fake or fraudulent property</option>
+                        <option value="Harassment">Harassment or abuse</option>
+                        <option value="InappropriateContent">Inappropriate content</option>
+                        <option value="Scam">Scam or financial fraud</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <span asp-validation-for="Reason" class="invalid-feedback"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Description" class="form-label">Additional Details (optional)</label>
+                    <textarea asp-for="Description" class="form-control textarea" rows="4"
+                              placeholder="Provide more context about this report…"></textarea>
+                    <span asp-validation-for="Description" class="invalid-feedback"></span>
+                </div>
+            </div>
+
+            <div class="form-submit-bar" style="max-width:600px;margin:2rem auto 0;">
+                <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    🚩 Submit Report
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section HeadStyles {
+    <style>
+        .report-target-info {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: .85rem 1rem;
+            background: rgba(99,102,241,.06);
+            border: 1px solid rgba(99,102,241,.15);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            font-size: .88rem;
+        }
+
+        .report-target-label {
+            color: var(--text-muted);
+        }
+
+        .report-target-type {
+            padding: .2rem .55rem;
+            background: rgba(108,99,255,.15);
+            color: #a78bfa;
+            border-radius: 100px;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .report-target-name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+    </style>
+}

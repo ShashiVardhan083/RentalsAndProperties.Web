@@ -1,16 +1,19 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Helpers;
+using RentalsAndProperties.Web.Models;
+using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
+using RentalsAndProperties.Web.ViewModels.Property;
 
 namespace RentalsAndProperties.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly PropertyApiService PropertyApi;
+        private readonly PropertySearchApiService SearchApi;
 
-        public HomeController(PropertyApiService propertyApi)
+        public HomeController(PropertySearchApiService searchApi)
         {
-            PropertyApi = propertyApi;
+            SearchApi = searchApi;
         }
 
         public async Task<IActionResult> Index()
@@ -20,10 +23,31 @@ namespace RentalsAndProperties.Web.Controllers
             ViewBag.Roles = SessionHelper.GetRoles(HttpContext.Session);
 
             // Load approved properties for the featured section
-            var result = await PropertyApi.GetApprovedAsync(1, 6);
-            ViewBag.Properties = result?.Data;
+            var query = new PropertySearchQueryDto
+            {
+                Page = 1,
+                PageSize = 6,
+                SortBy = "Newest"
+            };
 
-            return View();
+            var result = await SearchApi.SearchAsync(query);
+
+            var vm = new PropertyListViewModel
+            {
+                TotalCount = result?.Data?.TotalCount ?? 0,
+                Properties = result?.Data?.Properties?.Select(p => new PropertyCardViewModel
+                {
+                    PropertyId = p.PropertyId,
+                    Title = p.Title,
+                    City = p.City,
+                    Price = p.Price,
+                    ListingType = p.ListingType,
+                    PropertyType = p.PropertyType,
+                    BHKType = p.BHKType,
+                    PrimaryImageUrl = p.PrimaryImageUrl
+                }).ToList() ?? new()
+            };
+            return View(vm);
         }
 
         [HttpGet("Home/Error")]

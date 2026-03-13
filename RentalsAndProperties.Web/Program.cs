@@ -10,8 +10,8 @@ builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromDays(7);
     options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.IsEssential = true; //session works even without accepting cookies
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; //cookie will be sent only through https not with http
     options.Cookie.SameSite = SameSiteMode.Strict;
 });
 
@@ -48,7 +48,42 @@ builder.Services.AddHttpClient<PropertySearchApiService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
-builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddHttpClient<TransactionApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+builder.Services.AddHttpClient<ReviewApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+builder.Services.AddHttpClient<LocationApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+builder.Services.AddHttpClient<ReportApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+builder.Services.AddHttpClient<AnalyticsApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
+
+builder.Services.AddHttpClient<ChatApiService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).AddHttpMessageHandler<JwtDelegatingHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

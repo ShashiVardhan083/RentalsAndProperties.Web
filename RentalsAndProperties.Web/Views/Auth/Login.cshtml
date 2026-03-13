@@ -1,4 +1,4 @@
-﻿@model RentalsAndProperties.Web.Models.ViewModels.LoginViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Auth.LoginViewModel
 @{
     ViewData["Title"] = "Sign In";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -44,13 +44,14 @@
             <!-- Phone Field (partial view) -->
             @await Html.PartialAsync("_PhoneInput", Model.PhoneNumber,
             new ViewDataDictionary(ViewData) {
+                      //  {"Label","Phone Number"},
                         { "FieldId", "PhoneNumber" },
                         { "FieldName", "PhoneNumber" },
-                        { "Label", "Phone Number" }
+                       { "Label", "Phone Number" }
                         })
 
             <!-- Validation message from model state -->
-            <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
+           <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
 
             <!-- Password Field (partial view) -->
             @await Html.PartialAsync("_PasswordInput", (object)null!,

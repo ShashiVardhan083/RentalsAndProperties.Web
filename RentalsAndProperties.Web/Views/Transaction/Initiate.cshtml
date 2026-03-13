@@ -1,0 +1,446 @@
+﻿@model RentalsAndProperties.Web.ViewModels.Transaction.TransactionViewModel
+@{
+    ViewData["Title"] = "Initiate Transaction";
+}
+
+<div class="tx-page">
+    <div class="tx-hero">
+        <div class="hero-orb orb-1" aria-hidden="true"></div>
+        <div class="hero-orb orb-2" aria-hidden="true"></div>
+        <div class="tx-hero-inner">
+            <div class="hero-badge">💳 Secure Transaction</div>
+            <h1 class="tx-hero-title">Complete Your <span class="gradient-text">Transaction</span></h1>
+            <p class="tx-hero-sub">Review the property details and choose your payment method.</p>
+        </div>
+    </div>
+
+    <div class="tx-body">
+        <div class="tx-grid">
+
+            <!-- Property Summary Card -->
+            <div class="tx-property-card">
+                <div class="tx-property-thumb">🏠</div>
+                <div class="tx-property-info">
+                    <div class="tx-property-title">@Model.PropertyTitle</div>
+                    <div class="tx-property-meta">
+                        📍 @Model.PropertyCity &nbsp;·&nbsp;
+                        @Model.PropertyType &nbsp;·&nbsp; @Model.BHKType
+                    </div>
+                    <div class="tx-property-price">
+                        ₹@Model.PropertyPrice.ToString("N0")
+                        <span>@(Model.ListingType == "Rent" ? "/month" : "")</span>
+                    </div>
+                </div>
+                <div class="tx-owner-info">
+                    <div class="tx-owner-avatar">@(Model.OwnerName.Length > 0 ? Model.OwnerName[0].ToString().ToUpper() : "?")</div>
+                    <div>
+                        <div class="tx-owner-name">@Model.OwnerName</div>
+                        <div class="tx-owner-trust">⭐ @Model.OwnerTrustScore.ToString("F0") Trust Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Card -->
+            <div class="tx-form-card">
+                <h2 class="tx-form-title">Transaction Details</h2>
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-error">
+                        <span>⚠</span>
+                        <div>
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <div>@error.ErrorMessage</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <form asp-action="Initiate" asp-controller="Transaction"
+                      method="post" id="txForm" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="PropertyId" />
+                    <input type="hidden" asp-for="PropertyTitle" />
+                    <input type="hidden" asp-for="PropertyCity" />
+                    <input type="hidden" asp-for="PropertyPrice" />
+                    <input type="hidden" asp-for="PropertyType" />
+                    <input type="hidden" asp-for="ListingType" />
+                    <input type="hidden" asp-for="BHKType" />
+                    <input type="hidden" asp-for="OwnerName" />
+                    <input type="hidden" asp-for="OwnerTrustScore" />
+
+                    <!-- Transaction Type -->
+                    <div class="tx-field-group">
+                        <label class="tx-label">Transaction Type</label>
+                        <div class="tx-option-row">
+                            @if (Model.ListingType == "Rent" || Model.ListingType == "")
+                            {
+                                <label class="tx-option-card @(Model.TransactionType == "Rent" ? "selected" : "")">
+                                    <input type="radio" name="TransactionType" value="Rent"
+                                           @(Model.TransactionType == "Rent" ? "checked" : "") hidden />
+                                    <div class="tx-option-icon">🔑</div>
+                                    <div class="tx-option-label">Rent</div>
+                                    <div class="tx-option-desc">Monthly rental agreement</div>
+                                </label>
+                            }
+                            @if (Model.ListingType == "Sale" || Model.ListingType == "")
+                            {
+                                <label class="tx-option-card @(Model.TransactionType == "Sale" ? "selected" : "")">
+                                    <input type="radio" name="TransactionType" value="Sale"
+                                           @(Model.TransactionType == "Sale" ? "checked" : "") hidden />
+                                    <div class="tx-option-icon">🏡</div>
+                                    <div class="tx-option-label">Buy</div>
+                                    <div class="tx-option-desc">Full property purchase</div>
+                                </label>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div class="tx-field-group">
+                        <label class="tx-label">Payment Method</label>
+                        <div class="tx-option-row">
+                            <label class="tx-option-card selected" id="cardOnline">
+                                <input type="radio" name="PaymentMethod" value="Online" checked hidden />
+                                <div class="tx-option-icon">⚡</div>
+                                <div class="tx-option-label">Online</div>
+                                <div class="tx-option-desc">Instant simulated payment — completes immediately</div>
+                            </label>
+                            <label class="tx-option-card" id="cardOffline">
+                                <input type="radio" name="PaymentMethod" value="Offline" hidden />
+                                <div class="tx-option-icon">🤝</div>
+                                <div class="tx-option-label">Offline</div>
+                                <div class="tx-option-desc">Both parties confirm to complete the deal</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Amount Summary -->
+                    <div class="tx-summary">
+                        <div class="tx-summary-row">
+                            <span>Property price</span>
+                            <strong>₹@Model.PropertyPrice.ToString("N0")</strong>
+                        </div>
+                        <div class="tx-summary-row tx-summary-total">
+                            <span>Total amount</span>
+                            <strong class="tx-amount">₹@Model.PropertyPrice.ToString("N0")</strong>
+                        </div>
+                    </div>
+
+                    <div class="tx-info-box" id="onlineInfo">
+                        ⚡ <strong>Online payment</strong> is simulated — no real money is charged.
+                        The transaction will complete instantly and the property will be marked as
+                        @(Model.ListingType == "Rent" ? "Rented" : "Sold").
+                    </div>
+                    <div class="tx-info-box tx-info-offline" id="offlineInfo" style="display:none;">
+                        🤝 <strong>Offline deal</strong>: After you confirm, the owner also needs to confirm.
+                        The property status updates only when both parties agree.
+                    </div>
+
+                    <div class="flex gap-3 mt-4">
+                        <a href="/Property/Details/@Model.PropertyId" class="btn btn-secondary" style="flex:1;text-align:center;">
+                            ← Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg" id="submitTxBtn" style="flex:2;">
+                            <span class="btn-text" id="submitLabel">⚡ Proceed with Online Payment</span>
+                            <span class="btn-spinner"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section HeadStyles {
+    <style>
+        .tx-page {
+            padding-top: 68px;
+            min-height: 100vh;
+        }
+
+        .tx-hero {
+            position: relative;
+            min-height: 200px;
+            background: var(--gradient-hero);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+        }
+
+        .tx-hero-inner {
+            position: relative;
+            z-index: 1;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+        }
+
+        .tx-hero-title {
+            font-size: clamp(1.6rem,3.5vw,2.5rem);
+            font-weight: 800;
+            margin: .5rem 0;
+        }
+
+        .tx-hero-sub {
+            color: var(--text-secondary);
+        }
+
+        .tx-body {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .tx-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Property card */
+        .tx-property-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-accent);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tx-property-thumb {
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+
+        .tx-property-info {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .tx-property-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .tx-property-meta {
+            font-size: .82rem;
+            color: var(--text-muted);
+            margin: .3rem 0;
+        }
+
+        .tx-property-price {
+            font-family: 'Syne',sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--gradient-btn);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+            .tx-property-price span {
+                font-size: .75rem;
+                font-weight: 400;
+                color: var(--text-muted);
+                -webkit-text-fill-color: var(--text-muted);
+            }
+
+        .tx-owner-info {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            flex-shrink: 0;
+        }
+
+        .tx-owner-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-btn);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .tx-owner-name {
+            font-weight: 600;
+            font-size: .9rem;
+        }
+
+        .tx-owner-trust {
+            font-size: .78rem;
+            color: var(--text-muted);
+        }
+
+        /* Form card */
+        .tx-form-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+        }
+
+        .tx-form-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+        }
+
+        .tx-field-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .tx-label {
+            display: block;
+            font-size: .8rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: .75rem;
+        }
+
+        /* Option cards */
+        .tx-option-row {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tx-option-card {
+            flex: 1;
+            min-width: 140px;
+            padding: 1.25rem;
+            background: rgba(255,255,255,.04);
+            border: 2px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all .2s var(--spring);
+            text-align: center;
+        }
+
+            .tx-option-card:hover {
+                border-color: var(--border-accent);
+                transform: translateY(-2px);
+            }
+
+            .tx-option-card.selected {
+                border-color: var(--accent-1);
+                background: rgba(108,99,255,.08);
+            }
+
+        .tx-option-icon {
+            font-size: 1.8rem;
+            margin-bottom: .4rem;
+        }
+
+        .tx-option-label {
+            font-weight: 700;
+            font-size: .95rem;
+            margin-bottom: .2rem;
+        }
+
+        .tx-option-desc {
+            font-size: .75rem;
+            color: var(--text-muted);
+        }
+
+        /* Summary */
+        .tx-summary {
+            background: rgba(108,99,255,.06);
+            border: 1px solid rgba(108,99,255,.15);
+            border-radius: var(--radius-md);
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0 1rem;
+        }
+
+        .tx-summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .35rem 0;
+            font-size: .9rem;
+            color: var(--text-secondary);
+        }
+
+        .tx-summary-total {
+            border-top: 1px solid rgba(108,99,255,.2);
+            margin-top: .35rem;
+            padding-top: .6rem;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .tx-amount {
+            background: var(--gradient-btn);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.1rem;
+        }
+
+        /* Info box */
+        .tx-info-box {
+            font-size: .85rem;
+            color: var(--text-secondary);
+            background: rgba(67,233,123,.07);
+            border: 1px solid rgba(67,233,123,.2);
+            border-radius: var(--radius-sm);
+            padding: .75rem 1rem;
+            line-height: 1.6;
+        }
+
+        .tx-info-offline {
+            background: rgba(247,151,30,.07);
+            border-color: rgba(247,151,30,.2);
+        }
+
+        @@media(max-width:600px) {
+            .tx-option-row {
+                flex-direction: column;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const radios = document.querySelectorAll('.tx-option-row input[type="radio"]');
+            const submitLabel = document.getElementById('submitLabel');
+            const onlineInfo  = document.getElementById('onlineInfo');
+            const offlineInfo = document.getElementById('offlineInfo');
+
+            radios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    // Update selected state on cards
+                    const group = radio.closest('.tx-option-row');
+                    group?.querySelectorAll('.tx-option-card').forEach(c => c.classList.remove('selected'));
+                    radio.closest('.tx-option-card')?.classList.add('selected');
+
+                    // Update submit label + info box
+                    const method = document.querySelector('input[name="PaymentMethod"]:checked')?.value;
+                    if (method === 'Offline') {
+                        submitLabel.textContent = '🤝 Initiate Offline Deal';
+                        onlineInfo.style.display = 'none';
+                        offlineInfo.style.display = 'block';
+                    } else {
+                        submitLabel.textContent = '⚡ Proceed with Online Payment';
+                        onlineInfo.style.display = 'block';
+                        offlineInfo.style.display = 'none';
+                    }
+                });
+            });
+
+            document.getElementById('txForm').addEventListener('submit', function() {
+                setButtonLoading(document.getElementById('submitTxBtn'), true);
+            });
+        });
+    </script>
+}

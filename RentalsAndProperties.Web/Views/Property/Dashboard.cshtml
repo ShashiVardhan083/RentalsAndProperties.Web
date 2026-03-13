@@ -1,11 +1,10 @@
-﻿@model List<RentalsAndProperties.Web.Models.PropertyResponseModel>
+﻿@model List<RentalsAndProperties.Web.ViewModels.Property.PropertyCardViewModel>
 @using RentalsAndProperties.Web.Helpers
 @{
     ViewData["Title"] = "My Properties";
     var roles = SessionHelper.GetRoles(Context.Session);
     var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
 }
-
 @if (!isOwnerOrAdmin)
 {
     <!-- Customer landed here: show upgrade prompt -->
@@ -58,24 +57,16 @@ else
                 </a>
             </div>
         </div>
-
         <div class="dashboard-body">
 
+            @* ── Single alert block: ViewBag takes priority (set by controller from TempData) ── *@
             @if (!string.IsNullOrEmpty(ViewBag.Success?.ToString()))
             {
                 <div class="alert alert-success">✓ @ViewBag.Success</div>
             }
-            @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
+            else if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
             {
                 <div class="alert alert-error">⚠ @ViewBag.Error</div>
-            }
-            @if (TempData["Success"] != null)
-            {
-                <div class="alert alert-success">✓ @TempData["Success"]</div>
-            }
-            @if (TempData["Error"] != null)
-            {
-                <div class="alert alert-error">⚠ @TempData["Error"]</div>
             }
 
             @if (Model == null || Model.Count == 0)
@@ -159,15 +150,12 @@ else
                                         <div class="table-actions">
                                             <a href="/Property/Details/@p.PropertyId"
                                                class="btn btn-ghost btn-sm" title="View">👁</a>
-
                                             <a href="/Property/UploadImages/@p.PropertyId"
                                                class="btn btn-ghost btn-sm" title="Images">
                                                 📸 <span class="img-count-chip">@(p.ImageCount) imgs</span>
                                             </a>
-
                                             <a href="/Property/Edit/@p.PropertyId"
                                                class="btn btn-secondary btn-sm" title="Edit">✏️ Edit</a>
-
                                             <form asp-controller="Property" asp-action="Delete"
                                                   asp-route-id="@p.PropertyId" method="post"
                                                   onsubmit="return confirm('Delete \'@p.Title\'? This cannot be undone.')">
@@ -335,6 +323,7 @@ else
             display: flex;
             align-items: center;
             gap: .4rem;
+            flex-wrap: wrap;
         }
 
         .status-pill {
@@ -363,8 +352,7 @@ else
             color: #fca5a5;
         }
 
-        .status-sold,
-        .status-rented {
+        .status-sold, .status-rented {
             background: rgba(99,102,241,.15);
             color: #a78bfa;
         }
@@ -388,7 +376,6 @@ else
             color: var(--text-secondary);
         }
 
-        /* Upgrade prompt for customers */
         .upgrade-prompt {
             max-width: 520px;
             margin: 4rem auto;
@@ -429,12 +416,10 @@ else
         }
 
         @@media (max-width: 768px) {
-            .dash-table th:nth-child(3), .dash-table td:nth-child(3), .dash-table th:nth-child(4), .dash-table td:nth-child(4)
-
-        {
-            display: none;
-        }
-
+            .dash-table th:nth-child(3), .dash-table td:nth-child(3),
+            .dash-table th:nth-child(4), .dash-table td:nth-child(4) {
+                display: none;
+            }
         }
     </style>
 }

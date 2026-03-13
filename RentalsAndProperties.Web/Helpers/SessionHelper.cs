@@ -42,13 +42,15 @@ namespace RentalsAndProperties.Web.Helpers
         public static bool IsAuthenticated(ISession session)
         {
             var token = session.GetString(TokenKey);
-            if (string.IsNullOrEmpty(token)) return false;
+            if (string.IsNullOrEmpty(token))
+                return false;
 
             var expiryStr = session.GetString(ExpiryKey);
-            if (DateTime.TryParse(expiryStr, out var expiry))
-                return DateTime.UtcNow < expiry;
 
-            return false;
+            if (DateTime.TryParse(expiryStr, out var expiry))
+                return expiry > DateTime.UtcNow;
+
+            return true; // assume valid if expiry missing
         }
 
         public static string? GetToken(ISession session) => session.GetString(TokenKey);

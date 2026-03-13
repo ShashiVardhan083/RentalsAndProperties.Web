@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
 using RentalsAndProperties.Web.Helpers;
-using RentalsAndProperties.Web.Models;
+using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Models.Enums;
-using RentalsAndProperties.Web.Models.ViewModels;
 using RentalsAndProperties.Web.Services;
+using RentalsAndProperties.Web.ViewModels.Property;
+using RentalsAndProperties.Web.ViewModels.Review;
 
 namespace RentalsAndProperties.Web.Controllers
 {
@@ -14,20 +16,34 @@ namespace RentalsAndProperties.Web.Controllers
         private readonly PropertyMediaApiService MediaApi;
         private readonly PropertySearchApiService SearchApi;
         private readonly ILogger<PropertyController> Logger;
+        private readonly ReviewApiService ReviewApi;
+        private readonly LocationApiService LocationApi;
 
         public PropertyController(
+            LocationApiService locationApi,
             PropertyApiService propertyApi,
             PropertyMediaApiService mediaApi,
             PropertySearchApiService searchApi,
+            ReviewApiService reviewApi,
             ILogger<PropertyController> logger)
         {
+            LocationApi = locationApi;
             PropertyApi = propertyApi;
             MediaApi = mediaApi;
             SearchApi = searchApi;
+            ReviewApi = reviewApi;
             Logger = logger;
         }
 
-        // Public: Approved Listings Grid
+        [HttpGet]
+        public async Task<IActionResult> GetPincode(string city)
+        {
+            var pincode = await LocationApi.GetPincodeAsync(city);
+            return Json(new { pincode });
+        }
+
+        // Public: Approved Listings
+
         [HttpGet]
         public async Task<IActionResult> Index([FromQuery] int page = 1)
         {
@@ -36,22 +52,38 @@ namespace RentalsAndProperties.Web.Controllers
             if (result?.Data == null)
             {
                 ViewBag.Error = result?.Message ?? "Failed to load properties.";
-                return View(new PagedResultModel<PropertyResponseModel>());
+                return View(new PropertyListViewModel());
             }
 
-            ViewBag.IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session);
-            return View(result.Data);
+            var vm = new PropertyListViewModel
+            {
+                CurrentPage = result.Data.Page,
+                TotalPages = result.Data.TotalPages,
+                TotalCount = result.Data.TotalCount,
+                Properties = result.Data.Items.Select(p => new PropertyCardViewModel
+                {
+                    PropertyId = p.PropertyId,
+                    Title = p.Title,
+                    City = p.City,
+                    Price = p.Price,
+                    ListingType = p.ListingType,
+                    PropertyType = p.PropertyType,
+                    BHKType = p.BHKType,
+                    PrimaryImageUrl = p.PrimaryImageUrl
+                }).ToList()
+            };
+
+            return View(vm);
         }
 
-        // Phase 4: Search & Filter 
+        // Search & Filter 
+
         [HttpGet]
-        public async Task<IActionResult> Browse([FromQuery] PropertySearchQueryModel query)
+        public async Task<IActionResult> Browse([FromQuery] PropertySearchQueryDto query)
         {
-            // Fetch cities for the filter dropdown
             var citiesResult = await SearchApi.GetCitiesAsync();
             ViewBag.Cities = citiesResult?.Data ?? new List<string>();
 
-            // Run search
             var result = await SearchApi.SearchAsync(query);
 
             ViewBag.IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session);
@@ -59,14 +91,43 @@ namespace RentalsAndProperties.Web.Controllers
 
             if (result?.Data == null)
             {
-                ViewBag.Error = result?.Message ?? "Search failed. Please try again.";
-                return View(new PropertySearchResultModel());
+                ViewBag.Error = result?.Message ?? "Search failed.";
+                return View(new PropertySearchResultViewModel());
             }
 
-            return View(result.Data);
+            var vm = new PropertySearchResultViewModel
+            {
+                TotalCount = result.Data.TotalCount,
+                CurrentPage = result.Data.CurrentPage,
+                TotalPages = result.Data.TotalPages,
+
+                Properties = result.Data.Properties.Select(p => new PropertyCardViewModel
+                {
+                    PropertyId = p.PropertyId,
+                    Title = p.Title,
+                    City = p.City,
+                    Price = p.Price,
+                    ListingType = p.ListingType,
+                    PropertyType = p.PropertyType,
+                    BHKType = p.BHKType,
+                    FurnishingType = p.FurnishingType,
+                    Bedrooms = p.Bedrooms,
+                    Bathrooms = p.Bathrooms,
+                    SquareFeet = p.SquareFeet,
+                    OwnerName = p.OwnerName,
+                    OwnerTrustScore = p.OwnerTrustScore,
+                    PrimaryImageUrl = p.PrimaryImageUrl,
+                    ImageUrls = p.ImageUrls,
+                    AverageRating = p.AverageRating,
+                    ReviewCount = p.ReviewCount
+                }).ToList()
+            };
+
+            return View(vm);
         }
 
-        //  Property Detail
+        // Property Detail 
+
         [HttpGet("Property/Details/{id:guid}")]
         [JwtAuthorize]
         public async Task<IActionResult> Details(Guid id)
@@ -79,32 +140,100 @@ namespace RentalsAndProperties.Web.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.IsOwner = result.Data.OwnerId.ToString() ==
-                              HttpContext.Session.GetString("UserId");
+            var p = result.Data;
+            var reviewsResult = await ReviewApi.GetPropertyReviewsAsync(id);
+            var reviews = reviewsResult?.Data ?? new List<ReviewViewModel>();
 
-            return View(result.Data);
+            ViewBag.Reviews = reviews;
+
+            var vm = new PropertyDetailViewModel
+            {
+                PropertyId = p.PropertyId,
+                Title = p.Title,
+                Description = p.Description,
+                City = p.City,
+                Address = p.Address,
+                Pincode = p.Pincode,
+                Price = p.Price,
+                SecurityDeposit = p.SecurityDeposit,
+                Bedrooms = p.Bedrooms,
+                Bathrooms = p.Bathrooms,
+                SquareFeet = (int)p.SquareFeet,
+                PropertyType = p.PropertyType,
+                ListingType = p.ListingType,
+                BHKType = p.BHKType,
+                FurnishingType = p.FurnishingType,
+                AvailableFrom = p.AvailableFrom,
+                Status = p.Status,
+                OwnerName = p.OwnerName,
+                OwnerPhone = p.OwnerPhone,
+                OwnerTrustScore = p.OwnerTrustScore,
+                OwnerId = p.OwnerId,
+                Images = p.Images.Select(i => new PropertyImageViewModel
+                {
+                    ImageId = i.ImageId,
+                    ImageUrl = i.ImageUrl,
+                    IsPrimary = i.IsPrimary
+                }).ToList()
+            };
+
+            return View(vm);
         }
 
-        // Owner Dashboard
+        //  Owner Dashboard 
+
         [HttpGet]
         [JwtAuthorize("Owner", "Admin")]
         public async Task<IActionResult> Dashboard()
         {
             var result = await PropertyApi.GetOwnerPropertiesAsync();
 
-            if (result == null || !result.Success)
+            if (result == null || !result.Success || result.Data == null)
             {
                 ViewBag.Error = result?.Message ?? "Failed to load your properties.";
-                return View(new List<PropertyResponseModel>());
+                return View(new List<PropertyCardViewModel>());
             }
 
-            if (TempData["Success"] is string s) ViewBag.Success = s;
-            if (TempData["Error"] is string e) ViewBag.Error = e;
+            /*    var vm = result.Data.Select(p => new PropertyCardViewModel
+                {
+                    PropertyId = p.PropertyId,
+                    Title = p.Title,
+                    City = p.City,
+                    Price = p.Price,
+                    ListingType = p.ListingType,
+                    PropertyType = p.PropertyType,
+                    BHKType = p.BHKType,
+                    PrimaryImageUrl = p.PrimaryImageUrl
+                }).ToList();
+            */
+            var vm = result.Data.Select(p => new PropertyCardViewModel
+            {
+                PropertyId = p.PropertyId,
+                Title = p.Title,
+                City = p.City,
+                Price = p.Price,
+                ListingType = p.ListingType,
+                PropertyType = p.PropertyType,
+                BHKType = p.BHKType,
+                PrimaryImageUrl = p.PrimaryImageUrl,
+                //  Add this line:
+                ImageUrls = p.ImageUrls ?? new List<string>(),
+                Status = p.Status,           // ✅ Also add Status so status pills work
+                CreatedAt = p.CreatedAt,
+            }).ToList();
 
-            return View(result.Data ?? new List<PropertyResponseModel>());
+            if (TempData.ContainsKey("Success"))
+                ViewBag.Success = TempData["Success"];
+
+            if (TempData.ContainsKey("Error") &&
+                HttpContext.Request.Path.Value!.Contains("/Property/Dashboard"))
+                ViewBag.Error = TempData["Error"];
+
+            return View(vm);
         }
 
-        // Create Property
+        //  Create Property 
+
         [HttpGet]
         [JwtAuthorize("Owner", "Admin")]
         public IActionResult Create()
@@ -160,7 +289,8 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // Edit Property
+        // Edit Property 
+
         [HttpGet]
         [JwtAuthorize("Owner", "Admin")]
         public async Task<IActionResult> Edit(Guid id)
@@ -179,7 +309,7 @@ namespace RentalsAndProperties.Web.Controllers
                 PropertyId = detail.PropertyId,
                 Title = detail.Title,
                 Description = detail.Description,
-                City = detail.City,
+                City = Enum.TryParse<CityWeb>(detail.City, true, out var city) ? city : CityWeb.Hyderabad,
                 Address = detail.Address,
                 Price = detail.Price,
                 SecurityDeposit = detail.SecurityDeposit,
@@ -188,7 +318,7 @@ namespace RentalsAndProperties.Web.Controllers
                 Bathrooms = detail.Bathrooms,
                 AvailableFrom = detail.AvailableFrom,
                 CurrentStatus = detail.Status,
-                ExistingImages = detail.Images.Select(i => new PropertyImageModel
+                ExistingImages = detail.Images.Select(i => new PropertyImageDto
                 {
                     ImageId = i.ImageId,
                     ImageUrl = i.ImageUrl,
@@ -202,6 +332,12 @@ namespace RentalsAndProperties.Web.Controllers
                 model.ListingType = lt;
             if (Enum.TryParse<FurnishingTypeWeb>(detail.FurnishingType, true, out var ft))
                 model.FurnishingType = ft;
+
+            var cityMatch = Enum.GetValues<CityWeb>()
+                .FirstOrDefault(c => CityDetails.GetName(c)
+                    .Equals(detail.City, StringComparison.OrdinalIgnoreCase));
+            model.City = cityMatch;
+            model.Pincode = detail.Pincode ?? "";
 
             model.BHKType = detail.BHKType switch
             {
@@ -226,12 +362,12 @@ namespace RentalsAndProperties.Web.Controllers
             if (!ModelState.IsValid)
             {
                 var detail = await PropertyApi.GetDetailsAsync(id);
-                model.ExistingImages = detail?.Data?.Images.Select(i => new PropertyImageModel
+                model.ExistingImages = detail?.Data?.Images.Select(i => new PropertyImageDto
                 {
                     ImageId = i.ImageId,
                     ImageUrl = i.ImageUrl,
-                    IsPrimary = i.IsPrimary
-                }).ToList() ?? new List<PropertyImageModel>();
+                    IsPrimary = i.IsPrimary,
+                }).ToList() ?? new List<PropertyImageDto>();
 
                 SetEnumViewBags();
                 return View(model);
@@ -250,7 +386,8 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // ── Phase 3: Upload Images ───────────────────────────────────────────
+        //  Upload Images (GET) 
+
         [HttpGet]
         [JwtAuthorize("Owner", "Admin")]
         public async Task<IActionResult> UploadImages(Guid id)
@@ -267,7 +404,7 @@ namespace RentalsAndProperties.Web.Controllers
             {
                 PropertyId = id,
                 PropertyTitle = detail.Data.Title,
-                ExistingImages = detail.Data.Images.Select(i => new PropertyImageModel
+                ExistingImages = detail.Data.Images.Select(i => new PropertyImageDto
                 {
                     ImageId = i.ImageId,
                     ImageUrl = i.ImageUrl,
@@ -278,14 +415,30 @@ namespace RentalsAndProperties.Web.Controllers
             return View(vm);
         }
 
+        // Upload Images (POST) 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [JwtAuthorize("Owner", "Admin")]
         public async Task<IActionResult> UploadImages(Guid id, UploadImagesViewModel model)
         {
+            // Validate: files must be selected
             if (model.Images == null || model.Images.Count == 0)
             {
                 TempData["Error"] = "Please select at least one image to upload.";
+                return RedirectToAction(nameof(UploadImages), new { id });
+            }
+
+            // Client-side validation before sending to API
+            var invalidFiles = model.Images.Where(f =>
+                f.Length == 0 ||
+                f.Length > 5 * 1024 * 1024 ||
+                !new[] { ".jpg", ".jpeg", ".png", ".webp" }
+                    .Contains(Path.GetExtension(f.FileName).ToLower())).ToList();
+
+            if (invalidFiles.Any())
+            {
+                TempData["Error"] = "One or more files are invalid. Max 5MB each. Allowed: JPG, PNG, WebP.";
                 return RedirectToAction(nameof(UploadImages), new { id });
             }
 
@@ -293,7 +446,7 @@ namespace RentalsAndProperties.Web.Controllers
 
             if (result == null || !result.Success)
             {
-                TempData["Error"] = result?.Message ?? "Upload failed.";
+                TempData["Error"] = result?.Message ?? "Upload failed. Please try again.";
                 return RedirectToAction(nameof(UploadImages), new { id });
             }
 
@@ -301,7 +454,8 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(UploadImages), new { id });
         }
 
-        // ── Phase 3: Delete Image (AJAX) ─────────────────────────────────────
+        // Delete Image 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [JwtAuthorize("Owner", "Admin")]
@@ -317,7 +471,8 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(UploadImages), new { id = propertyId });
         }
 
-        // ── Phase 3: Set Primary Image (AJAX) ────────────────────────────────
+        // Set Primary Image 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [JwtAuthorize("Owner", "Admin")]
@@ -326,9 +481,7 @@ namespace RentalsAndProperties.Web.Controllers
             var result = await MediaApi.SetPrimaryAsync(imageId);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = result?.Success ?? false, message = result?.Message });
-            }
 
             TempData[result?.Success == true ? "Success" : "Error"] =
                 result?.Success == true
@@ -338,7 +491,8 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(UploadImages), new { id = propertyId });
         }
 
-        // ── Delete Property ──────────────────────────────────────────────────
+        //  Delete Property 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [JwtAuthorize("Owner", "Admin")]
@@ -354,13 +508,17 @@ namespace RentalsAndProperties.Web.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // ── Helpers ──────────────────────────────────────────────────────────
+        //  Helpers 
+
         private void SetEnumViewBags()
         {
             ViewBag.PropertyTypes = Enum.GetValues<PropertyTypeWeb>();
             ViewBag.ListingTypes = Enum.GetValues<ListingTypeWeb>();
             ViewBag.BHKTypes = Enum.GetValues<BHKTypeWeb>();
             ViewBag.FurnishingTypes = Enum.GetValues<FurnishingTypeWeb>();
+            ViewBag.Cities = Enum.GetValues<CityWeb>()
+                .Select(c => new { Value = c.ToString(), Name = CityDetails.GetName(c) })
+                .ToList();
         }
     }
 }

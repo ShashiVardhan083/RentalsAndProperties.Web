@@ -1,11 +1,12 @@
-﻿@model RentalsAndProperties.Web.Models.ViewModels.UploadImagesViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Property.UploadImagesViewModel
 @{
     ViewData["Title"] = "Manage Images – " + Model.PropertyTitle;
     var remaining = Model.MaxImages - Model.ExistingImages.Count;
 }
 
 <div class="upload-page">
-    <!-- Page Header -->
+
+    <!-- ── Page Header ── -->
     <div class="upload-page-header">
         <div class="upload-header-inner">
             <a href="/Property/Dashboard" class="back-link">← My Properties</a>
@@ -31,7 +32,7 @@
             <div class="alert alert-error fade-in-up">⚠ @TempData["Error"]</div>
         }
 
-        <!-- Current Images Grid -->
+        <!-- ── Current Images Grid ── -->
         @if (Model.ExistingImages.Any())
         {
             <div class="gallery-section">
@@ -56,24 +57,28 @@
                                 <div class="managed-img-overlay">
                                     @if (!img.IsPrimary)
                                     {
+                                        <!-- Set Primary form -->
                                         <form asp-action="SetPrimaryImage" asp-controller="Property"
                                               method="post" style="display:inline;">
                                             @Html.AntiForgeryToken()
                                             <input type="hidden" name="imageId" value="@img.ImageId" />
                                             <input type="hidden" name="propertyId" value="@Model.PropertyId" />
-                                            <button type="submit" class="img-action-btn img-btn-primary"
+                                            <button type="submit"
+                                                    class="img-action-btn img-btn-primary"
                                                     title="Set as cover photo">
                                                 ⭐
                                             </button>
                                         </form>
                                     }
+                                    <!-- Delete Image form -->
                                     <form asp-action="DeleteImage" asp-controller="Property"
                                           method="post" style="display:inline;"
                                           onsubmit="return confirm('Delete this image?')">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="imageId" value="@img.ImageId" />
                                         <input type="hidden" name="propertyId" value="@Model.PropertyId" />
-                                        <button type="submit" class="img-action-btn img-btn-delete"
+                                        <button type="submit"
+                                                class="img-action-btn img-btn-delete"
                                                 title="Delete image">
                                             🗑
                                         </button>
@@ -86,38 +91,60 @@
             </div>
         }
 
-        <!-- Upload Zone (only show if slots remain) -->
+        <!-- ── Upload Zone (only shown if slots remain) ── -->
         @if (remaining > 0)
         {
             <div class="upload-section">
                 <div class="gallery-section-header">
                     <h2 class="gallery-section-title">Add New Images</h2>
-                    <span class="gallery-hint">Up to @remaining more · JPG, PNG, WebP · Max 5MB each</span>
+                    <span class="gallery-hint">
+                        Up to @remaining more &nbsp;·&nbsp; JPG, PNG, WebP &nbsp;·&nbsp; Max 5MB each
+                    </span>
                 </div>
 
-                <form asp-action="UploadImages" asp-controller="Property"
+                <!--
+                    IMPORTANT: enctype="multipart/form-data" is required for file uploads.
+                    The file input name is "Images" which maps to UploadImagesViewModel.Images.
+                    The web controller then passes those files to PropertyMediaApiService
+                    which sends them to the API under the field name "files".
+                -->
+                <form asp-action="UploadImages"
+                      asp-controller="Property"
                       asp-route-id="@Model.PropertyId"
-                      method="post" enctype="multipart/form-data"
-                      id="uploadForm" novalidate>
+                      method="post"
+                      enctype="multipart/form-data"
+                      id="uploadForm"
+                      novalidate>
                     @Html.AntiForgeryToken()
 
                     <!-- Drop Zone -->
                     <div class="drop-zone" id="dropZone" tabindex="0"
                          role="button" aria-label="Click or drag images here">
-                        <input type="file" name="Images" id="fileInput"
-                               accept=".jpg,.jpeg,.png,.webp" multiple
+
+                        <!--
+                            name="Images" matches UploadImagesViewModel.Images (List<IFormFile>).
+                            The "multiple" attribute allows selecting several files at once.
+                        -->
+                        <input type="file"
+                               name="Images"
+                               id="fileInput"
+                               accept=".jpg,.jpeg,.png,.webp"
+                               multiple
                                class="file-input-hidden" />
+
                         <div class="drop-zone-icon">📁</div>
                         <p class="drop-zone-title">
                             <strong>Click to browse</strong> or drag &amp; drop images here
                         </p>
-                        <p class="drop-zone-sub">JPG · PNG · WebP &nbsp;·&nbsp; Max 5 MB each &nbsp;·&nbsp; Up to @remaining images</p>
+                        <p class="drop-zone-sub" id="dropZoneSub">
+                            JPG · PNG · WebP &nbsp;·&nbsp; Max 5 MB each &nbsp;·&nbsp; Up to @remaining images
+                        </p>
                     </div>
 
-                    <!-- Preview Grid -->
+                    <!-- New-image preview thumbnails -->
                     <div class="new-preview-grid" id="newPreviewGrid"></div>
 
-                    <!-- Upload Bar -->
+                    <!-- Upload action bar (hidden until files are chosen) -->
                     <div class="upload-actions" id="uploadActions" style="display:none;">
                         <div class="upload-progress-wrap" id="uploadProgressWrap" style="display:none;">
                             <div class="upload-progress-bar" id="uploadProgressBar"></div>
@@ -142,7 +169,7 @@
             <div class="alert alert-info">
                 <span>ℹ</span>
                 <span>
-                    You've reached the maximum of @Model.MaxImages images.
+                    You have reached the maximum of @Model.MaxImages images.
                     Delete existing images to add new ones.
                 </span>
             </div>
@@ -205,7 +232,7 @@
             color: var(--accent-1);
         }
 
-        /* ── Gallery Section ── */
+        /* ── Gallery & Upload sections ── */
         .gallery-section, .upload-section {
             margin-bottom: 2.5rem;
         }
@@ -339,7 +366,8 @@
             background: rgba(108,99,255,.03);
         }
 
-            .drop-zone:hover, .drop-zone.drag-active {
+            .drop-zone:hover,
+            .drop-zone.drag-active {
                 border-color: var(--accent-1);
                 background: rgba(108,99,255,.07);
                 transform: scale(1.01);
@@ -364,6 +392,11 @@
         .drop-zone-sub {
             font-size: .82rem;
             color: var(--text-muted);
+        }
+
+        /* Keep the hidden file input invisible but still on the page */
+        .file-input-hidden {
+            display: none;
         }
 
         /* ── New Preview Grid ── */
@@ -420,7 +453,7 @@
             border-radius: 3px;
         }
 
-        /* ── Upload Actions ── */
+        /* ── Upload Action Bar ── */
         .upload-actions {
             margin-top: 1.25rem;
             display: flex;
@@ -443,6 +476,7 @@
             border-radius: 100px;
             overflow: hidden;
             margin-bottom: .5rem;
+            width: 100%;
         }
 
         .upload-progress-bar {
@@ -464,32 +498,37 @@
             margin-top: .3rem;
         }
 
-        @@media(max-width:600px) {
+        @@media (max-width: 600px) {
             .managed-gallery {
-                grid-template-columns: repeat(auto-fill,minmax(130px,1fr));
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
             }
 
             .new-preview-grid {
-                grid-template-columns: repeat(auto-fill,minmax(100px,1fr));
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             }
         }
     </style>
 }
 
 @section Scripts {
+    <!--
+        imageUpload.js wires up the drop zone, preview grid, and sync logic.
+        It is plain JavaScript (no TypeScript) and uses only what is available
+        in the browser — no external dependencies required.
+    -->
     <script src="~/js/imageUpload.js" asp-append-version="true"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             initImageUpload({
-                dropZoneId: 'dropZone',
-                fileInputId: 'fileInput',
-                previewGridId: 'newPreviewGrid',
+                dropZoneId:      'dropZone',
+                fileInputId:     'fileInput',
+                previewGridId:   'newPreviewGrid',
                 uploadActionsId: 'uploadActions',
-                uploadBtnId: 'uploadBtn',
-                clearBtnId: 'clearBtn',
+                uploadBtnId:     'uploadBtn',
+                clearBtnId:      'clearBtn',
                 selectedCountId: 'selectedCount',
-                maxFiles: @remaining,
-                maxSizeMB: 5
+                maxFiles:        @remaining,
+                maxSizeMB:       5
             });
         });
     </script>

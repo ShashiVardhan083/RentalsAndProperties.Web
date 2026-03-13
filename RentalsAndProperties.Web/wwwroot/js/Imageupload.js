@@ -1,6 +1,10 @@
 ﻿/**
- * RentalsAndProperties – Image Upload JS (Phase 3)
+ * RentalsAndProperties – Image Upload JS
  * Handles: drag-drop, preview grid, file validation, upload progress
+ *
+ * FIXED:
+ *  - Removed TypeScript "!" non-null assertion that breaks in plain JS
+ *  - Added null guard on drop-zone-sub element
  */
 'use strict';
 
@@ -8,85 +12,92 @@
  * Initialize the image upload widget.
  * @param {Object} opts - Configuration options
  */
-function initImageUpload(opts = {}) {
-    const {
-        dropZoneId      = 'dropZone',
-        fileInputId     = 'fileInput',
-        previewGridId   = 'newPreviewGrid',
-        uploadActionsId = 'uploadActions',
-        uploadBtnId     = 'uploadBtn',
-        clearBtnId      = 'clearBtn',
-        selectedCountId = 'selectedCount',
-        maxFiles        = 10,
-        maxSizeMB       = 5
-    } = opts;
+function initImageUpload(opts) {
+    opts = opts || {};
 
-    const dropZone    = document.getElementById(dropZoneId);
-    const fileInput   = document.getElementById(fileInputId);
-    const previewGrid = document.getElementById(previewGridId);
-    const uploadActions = document.getElementById(uploadActionsId);
-    const uploadBtn   = document.getElementById(uploadBtnId);
-    const clearBtn    = document.getElementById(clearBtnId);
-    const selectedCount = document.getElementById(selectedCountId);
+    var dropZoneId = opts.dropZoneId || 'dropZone';
+    var fileInputId = opts.fileInputId || 'fileInput';
+    var previewGridId = opts.previewGridId || 'newPreviewGrid';
+    var uploadActionsId = opts.uploadActionsId || 'uploadActions';
+    var uploadBtnId = opts.uploadBtnId || 'uploadBtn';
+    var clearBtnId = opts.clearBtnId || 'clearBtn';
+    var selectedCountId = opts.selectedCountId || 'selectedCount';
+    var maxFiles = opts.maxFiles || 10;
+    var maxSizeMB = opts.maxSizeMB || 5;
 
+    var dropZone = document.getElementById(dropZoneId);
+    var fileInput = document.getElementById(fileInputId);
+    var previewGrid = document.getElementById(previewGridId);
+    var uploadActions = document.getElementById(uploadActionsId);
+    var uploadBtn = document.getElementById(uploadBtnId);
+    var clearBtn = document.getElementById(clearBtnId);
+    var selectedCount = document.getElementById(selectedCountId);
+
+    // Bail out if the required elements aren't on this page
     if (!dropZone || !fileInput) return;
 
-    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const MAX_BYTES     = maxSizeMB * 1024 * 1024;
-    let selectedFiles   = [];
+    var ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    var MAX_BYTES = maxSizeMB * 1024 * 1024;
+    var selectedFiles = [];
 
-    // ── Drop zone interactions ───────────────────────────────────────────────
+    // ── Drop zone interactions ────────────────────────────────────────────────
 
-    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('click', function () { fileInput.click(); });
 
-    dropZone.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    dropZone.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
     });
 
-    dropZone.addEventListener('dragover', e => {
+    dropZone.addEventListener('dragover', function (e) {
         e.preventDefault();
         dropZone.classList.add('drag-active');
     });
 
-    dropZone.addEventListener('dragleave', e => {
-        if (!dropZone.contains(e.relatedTarget))
+    dropZone.addEventListener('dragleave', function (e) {
+        if (!dropZone.contains(e.relatedTarget)) {
             dropZone.classList.remove('drag-active');
+        }
     });
 
-    dropZone.addEventListener('drop', e => {
+    dropZone.addEventListener('drop', function (e) {
         e.preventDefault();
         dropZone.classList.remove('drag-active');
         handleFiles(Array.from(e.dataTransfer.files));
     });
 
-    fileInput.addEventListener('change', () => {
+    fileInput.addEventListener('change', function () {
         handleFiles(Array.from(fileInput.files));
-        fileInput.value = ''; // reset so same file can be re-picked
+        fileInput.value = ''; // reset so the same file can be re-picked
     });
 
-    // ── File handling ────────────────────────────────────────────────────────
+    // ── File handling ─────────────────────────────────────────────────────────
 
     function handleFiles(files) {
-        for (const file of files) {
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+
             if (selectedFiles.length >= maxFiles) {
-                Toast?.error(`Maximum ${maxFiles} images allowed.`);
+                if (typeof Toast !== 'undefined') Toast.error('Maximum ' + maxFiles + ' images allowed.');
                 break;
             }
 
             if (!ALLOWED_TYPES.includes(file.type)) {
-                Toast?.error(`"${file.name}" is not a supported image type.`);
+                if (typeof Toast !== 'undefined') Toast.error('"' + file.name + '" is not a supported image type.');
                 continue;
             }
 
             if (file.size > MAX_BYTES) {
-                Toast?.error(`"${file.name}" exceeds the ${maxSizeMB}MB size limit.`);
+                if (typeof Toast !== 'undefined') Toast.error('"' + file.name + '" exceeds the ' + maxSizeMB + 'MB size limit.');
                 continue;
             }
 
-            // Deduplicate by name+size
-            const isDuplicate = selectedFiles.some(
-                f => f.name === file.name && f.size === file.size
-            );
+            // Deduplicate by name + size
+            var isDuplicate = selectedFiles.some(function (f) {
+                return f.name === file.name && f.size === file.size;
+            });
             if (isDuplicate) continue;
 
             selectedFiles.push(file);
@@ -97,26 +108,23 @@ function initImageUpload(opts = {}) {
         updateUI();
     }
 
-    // ── Preview grid ─────────────────────────────────────────────────────────
+    // ── Preview grid ──────────────────────────────────────────────────────────
 
     function rebuildPreview() {
         if (!previewGrid) return;
         previewGrid.innerHTML = '';
 
-        selectedFiles.forEach((file, idx) => {
-            const reader = new FileReader();
-            reader.onload = e => {
-                const item = document.createElement('div');
+        selectedFiles.forEach(function (file, idx) {
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                var item = document.createElement('div');
                 item.className = 'new-preview-item';
-                item.innerHTML = `
-                    <img src="${e.target.result}" alt="${file.name}" loading="lazy" />
-                    ${idx === 0 ? '<div class="new-preview-badge">Cover</div>' : ''}
-                    <button type="button" class="new-preview-remove"
-                            data-idx="${idx}" title="Remove"
-                            aria-label="Remove ${file.name}">✕</button>
-                `;
+                item.innerHTML =
+                    '<img src="' + e.target.result + '" alt="' + file.name + '" loading="lazy" />' +
+                    (idx === 0 ? '<div class="new-preview-badge">Cover</div>' : '') +
+                    '<button type="button" class="new-preview-remove" data-idx="' + idx + '" title="Remove" aria-label="Remove ' + file.name + '">&#x2715;</button>';
 
-                item.querySelector('.new-preview-remove').addEventListener('click', () => {
+                item.querySelector('.new-preview-remove').addEventListener('click', function () {
                     selectedFiles.splice(idx, 1);
                     rebuildPreview();
                     syncFileInput();
@@ -129,79 +137,92 @@ function initImageUpload(opts = {}) {
         });
     }
 
-    // ── Sync DataTransfer → file input ───────────────────────────────────────
+    // ── Sync DataTransfer → file input ────────────────────────────────────────
 
     function syncFileInput() {
         try {
-            const dt = new DataTransfer();
-            selectedFiles.forEach(f => dt.items.add(f));
+            var dt = new DataTransfer();
+            selectedFiles.forEach(function (f) { dt.items.add(f); });
             fileInput.files = dt.files;
-        } catch {
-            // Safari fallback: DataTransfer not supported — rely on server-side handling
+        } catch (err) {
+            // Safari fallback: DataTransfer.items not supported — the form will still
+            // submit whatever is currently in the real file input.
+            console.warn('DataTransfer not supported, falling back:', err);
         }
     }
 
-    // ── UI state ─────────────────────────────────────────────────────────────
+    // ── UI state ──────────────────────────────────────────────────────────────
 
     function updateUI() {
-        const hasFiles = selectedFiles.length > 0;
+        var hasFiles = selectedFiles.length > 0;
 
-        if (uploadActions)
+        if (uploadActions) {
             uploadActions.style.display = hasFiles ? 'flex' : 'none';
+        }
 
-        if (selectedCount)
+        if (selectedCount) {
             selectedCount.textContent = hasFiles
-                ? `${selectedFiles.length} image${selectedFiles.length > 1 ? 's' : ''} selected`
+                ? selectedFiles.length + ' image' + (selectedFiles.length > 1 ? 's' : '') + ' selected'
                 : '';
+        }
 
+        // Update the sub-text inside the drop zone (null-safe)
         if (dropZone) {
-            dropZone.querySelector('.drop-zone-sub')!.textContent =
-                `${selectedFiles.length}/${maxFiles} selected · JPG, PNG, WebP · Max ${maxSizeMB}MB each`;
+            var subEl = dropZone.querySelector('.drop-zone-sub');
+            if (subEl) {
+                subEl.textContent =
+                    selectedFiles.length + '/' + maxFiles + ' selected · JPG, PNG, WebP · Max ' + maxSizeMB + 'MB each';
+            }
         }
     }
 
-    // ── Clear button ─────────────────────────────────────────────────────────
+    // ── Clear button ──────────────────────────────────────────────────────────
 
-    clearBtn?.addEventListener('click', () => {
-        selectedFiles = [];
-        rebuildPreview();
-        syncFileInput();
-        updateUI();
-    });
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            selectedFiles = [];
+            rebuildPreview();
+            syncFileInput();
+            updateUI();
+        });
+    }
 
     // ── Upload form submit with loading state ─────────────────────────────────
 
-    uploadBtn?.closest('form')?.addEventListener('submit', e => {
-        if (selectedFiles.length === 0) {
-            e.preventDefault();
-            Toast?.error('Please select at least one image.');
-            return;
-        }
-        setButtonLoading?.(uploadBtn, true);
-        simulateProgress();
-    });
+    var uploadForm = uploadBtn ? uploadBtn.closest('form') : null;
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function (e) {
+            if (selectedFiles.length === 0) {
+                e.preventDefault();
+                if (typeof Toast !== 'undefined') Toast.error('Please select at least one image.');
+                return;
+            }
+            if (typeof setButtonLoading === 'function') setButtonLoading(uploadBtn, true);
+            simulateProgress();
+        });
+    }
 
-    // ── Fake progress bar (real progress needs XHR) ───────────────────────────
+    // ── Simulated progress bar ────────────────────────────────────────────────
 
     function simulateProgress() {
-        const bar   = document.getElementById('uploadProgressBar');
-        const label = document.getElementById('uploadProgressLabel');
-        const wrap  = document.getElementById('uploadProgressWrap');
+        var bar = document.getElementById('uploadProgressBar');
+        var label = document.getElementById('uploadProgressLabel');
+        var wrap = document.getElementById('uploadProgressWrap');
 
         if (!bar || !wrap) return;
         wrap.style.display = 'block';
 
-        let pct = 0;
-        const interval = setInterval(() => {
+        var pct = 0;
+        var interval = setInterval(function () {
             pct = Math.min(pct + Math.random() * 18, 90);
             bar.style.width = pct + '%';
-            if (label) label.textContent = `Uploading… ${Math.round(pct)}%`;
+            if (label) label.textContent = 'Uploading… ' + Math.round(pct) + '%';
         }, 200);
 
-        // Will complete once page reloads from form submit
+        // Store so it can be cleared if needed
         window._uploadInterval = interval;
     }
 }
 
-// ── Expose globally ──────────────────────────────────────────────────────────
+// Expose globally
 window.initImageUpload = initImageUpload;

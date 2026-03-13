@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Services\4w0cc4yi.yo0~" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\uploads\properties\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Models\Dtos\PropertyDetailDto.cs" />
   </ItemGroup>
 
 </Project>

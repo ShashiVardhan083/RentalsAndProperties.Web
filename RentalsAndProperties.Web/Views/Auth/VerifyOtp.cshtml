@@ -1,4 +1,4 @@
-﻿@model RentalsAndProperties.Web.Models.ViewModels.OtpVerifyViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Auth.OtpVerifyViewModel
 @{
     ViewData["Title"] = "Verify & Complete Profile";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -102,6 +102,7 @@
 
                 <!-- Full Name -->
                 <div class="form-group">
+                    <label for="FullName" class="form-label">Full Name</label>
                     <input type="text"
                            asp-for="FullName"
                            id="FullName"
@@ -111,12 +112,13 @@
                            required
                            data-required="true"
                            data-required-msg="Full name is required." />
-                    <label for="FullName" class="form-label">Full Name</label>
+                    
                     <span asp-validation-for="FullName" class="invalid-feedback"></span>
                 </div>
 
                 <!-- Email (optional) -->
                 <div class="form-group">
+                    <label for="Email" class="form-label">Email (optional)</label>
                     <input type="email"
                            asp-for="Email"
                            id="Email"
@@ -124,7 +126,7 @@
                            placeholder=" "
                            autocomplete="email"
                            inputmode="email" />
-                    <label for="Email" class="form-label">Email (optional)</label>
+                    
                     <span asp-validation-for="Email" class="invalid-feedback"></span>
                 </div>
 

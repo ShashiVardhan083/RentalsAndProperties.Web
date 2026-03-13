@@ -1,4 +1,4 @@
-﻿@model RentalsAndProperties.Web.Models.ViewModels.EditPropertyViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Property.EditPropertyViewModel
 @using RentalsAndProperties.Web.Models
 @{
     ViewData["Title"] = "Edit Property";
@@ -239,6 +239,20 @@
                 r.readAsDataURL(file);
             });
         }
+                function fetchPincode(cityValue) {
+            if (!cityValue) { document.getElementById('pincodeInput').value = ''; return; }
+            fetch(`/api/city/pincode/${cityValue}`)
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('pincodeInput').value = data.pincode || '';
+                })
+                .catch(() => {});
+        }
+        // Auto-fill on page load if city already selected (edit mode)
+        document.addEventListener('DOMContentLoaded', function() {
+            const citySelect = document.getElementById('citySelect');
+            if (citySelect?.value) fetchPincode(citySelect.value);
+        });
 
         function syncFiles() {
             const dt = new DataTransfer();

@@ -1,4 +1,4 @@
-﻿@model RentalsAndProperties.Web.Models.ViewModels.RegisterPhoneViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Auth.RegisterPhoneViewModel
 @{
     ViewData["Title"] = "Create Account";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -42,7 +42,7 @@
         }
 
         <form asp-action="Register" asp-controller="Auth" method="post"
-              id="registerForm" novalidate autocomplete="tel">
+              id="registerForm" novalidate autocomplete="on">
 
             @Html.AntiForgeryToken()
 

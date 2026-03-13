@@ -10,12 +10,21 @@ namespace RentalsAndProperties.Web.Services
             => ContextAccessor = contextAccessor;
 
         protected override async Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
+                 HttpRequestMessage request,
+                 CancellationToken cancellationToken)
         {
-            var token = ContextAccessor.HttpContext?.Session.GetString("JwtToken");
-            if (!string.IsNullOrEmpty(token))
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            var context = ContextAccessor.HttpContext;
+
+            if (context?.Session != null)
+            {
+                var token = context.Session.GetString("JwtToken");
+
+                if (!string.IsNullOrWhiteSpace(token))
+                {
+                    request.Headers.Authorization =
+                        new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+                }
+            }
 
             return await base.SendAsync(request, cancellationToken);
         }

@@ -1,5 +1,12 @@
-﻿@using RentalsAndProperties.Web.Helpers
+﻿@model RentalsAndProperties.Web.ViewModels.Property.PropertyListViewModel
+@using RentalsAndProperties.Web.Helpers
 @using RentalsAndProperties.Web.Models
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success text-center">
+        @TempData["Success"]
+    </div>
+}
 @{
     ViewData["Title"] = "Find Your Perfect Home";
     var isAuthenticated = SessionHelper.IsAuthenticated(Context.Session);
@@ -7,8 +14,6 @@
     var roles = SessionHelper.GetRoles(Context.Session);
     var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
     var isCustomerOnly = isAuthenticated && !isOwnerOrAdmin;
-    var properties = ViewBag.Properties as PagedResultModel<PropertyResponseModel>
-                          ?? new PagedResultModel<PropertyResponseModel>();
 }
 
 @section HeadStyles {
@@ -162,7 +167,7 @@
     <div class="hero-orb orb-3" aria-hidden="true"></div>
 
     <div style="position:relative;z-index:1;">
-        <div class="hero-badge">🏠 @(properties.TotalCount)+ Verified Listings</div>
+        <div class="hero-badge">🏠 @(Model.TotalCount)+ Verified Listings</div>
 
         <h1 class="hero-title" id="heroTitle">
             Find Your Perfect<br>
@@ -187,7 +192,7 @@
 
         <div class="hero-stats" role="list">
             <div class="stat-item" role="listitem">
-                <div class="stat-number">@(properties.TotalCount)+</div>
+                <div class="stat-number">@(Model.TotalCount)+</div>
                 <div class="stat-label">Properties</div>
             </div>
             <div class="stat-item" role="listitem">
@@ -212,7 +217,7 @@
         <a href="/Property" class="btn btn-secondary btn-sm">View All →</a>
     </div>
 
-    @if (properties.Items.Count == 0)
+    @if (!Model.Properties.Any())
     {
         <div style="text-align:center;padding:3rem;color:var(--text-muted);">
             <div style="font-size:3rem;margin-bottom:1rem;">🏘️</div>
@@ -222,7 +227,7 @@
     else
     {
         <div class="properties-grid" role="list">
-            @foreach (var p in properties.Items.Take(6))
+            @foreach (var p in Model.Properties.Take(6))
             {
                 <article class="property-card" role="listitem">
                     <div class="property-img"

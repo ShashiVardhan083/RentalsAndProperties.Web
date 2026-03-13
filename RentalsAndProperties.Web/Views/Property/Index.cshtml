@@ -1,4 +1,4 @@
-﻿@model RentalsAndProperties.Web.Models.PagedResultModel<RentalsAndProperties.Web.Models.PropertyResponseModel>
+﻿@model RentalsAndProperties.Web.ViewModels.Property.PropertyListViewModel
 @using RentalsAndProperties.Web.Helpers
 @{
     ViewData["Title"] = "Browse Properties";
@@ -54,7 +54,7 @@
             <div class="alert alert-error">⚠ @ViewBag.Error</div>
         }
 
-        @if (Model == null || Model.Items.Count == 0)
+        @if (Model == null || Model.Properties.Count == 0)
         {
             <div class="empty-state">
                 <div class="empty-icon">🏘️</div>
@@ -69,7 +69,7 @@
         else
         {
             <div class="properties-grid" role="list">
-                @foreach (var p in Model.Items)
+                @foreach (var p in Model.Properties)
                 {
                     <article class="property-card" role="listitem">
                         <!-- Image -->
@@ -123,12 +123,12 @@
                 <div class="pagination">
                     @if (Model.HasPrevious)
                     {
-                        <a href="/Property?page=@(Model.Page - 1)" class="btn btn-secondary btn-sm">← Prev</a>
+                        <a href="/Property?page=@(Model.CurrentPage - 1)" class="btn btn-secondary btn-sm">← Prev</a>
                     }
-                    <span class="page-info">Page @Model.Page of @Model.TotalPages</span>
+                    <span class="page-info">Page @Model.CurrentPage of @Model.TotalPages</span>
                     @if (Model.HasNext)
                     {
-                        <a href="/Property?page=@(Model.Page + 1)" class="btn btn-primary btn-sm">Next →</a>
+                        <a href="/Property?page=@(Model.CurrentPage + 1)" class="btn btn-primary btn-sm">Next →</a>
                     }
                 </div>
             }
