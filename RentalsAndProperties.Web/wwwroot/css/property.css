@@ -4,14 +4,15 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Nav active state ────────────────────────────────────────────── */
-.nav-link.active {
+/*.
+.active {
     color: var(--text-primary);
     background: rgba(99,102,241,.08);
     font-weight: 600;
-}
+}*/
 
 /* ── Property badge variants ─────────────────────────────────────── */
-.property-badge.badge-rent {
+/*.property-badge.badge-rent {
     background: rgba(67,233,123,.15);
     border: 1px solid rgba(67,233,123,.3);
     color: #43e97b;
@@ -21,10 +22,10 @@
     background: rgba(247,151,30,.15);
     border: 1px solid rgba(247,151,30,.3);
     color: #f59e0b;
-}
+}*/
 
 /* ── Property grid chips ─────────────────────────────────────────── */
-.prop-chips {
+/*.prop-chips {
     display: flex;
     gap: .4rem;
     flex-wrap: wrap;
@@ -39,10 +40,10 @@
     font-size: .72rem;
     font-weight: 600;
     color: #a78bfa;
-}
+}*/
 
 /* ── Status badges (shared across views) ─────────────────────────── */
-.status-badge,
+/*.status-badge,
 .status-pill {
     display: inline-flex;
     align-items: center;
@@ -82,10 +83,10 @@
     background: rgba(16,185,129,.15);
     border: 1px solid rgba(16,185,129,.3);
     color: #6ee7b7;
-}
+}*/
 
 /* ── Empty state ─────────────────────────────────────────────────── */
-.empty-state {
+/*.empty-state {
     text-align: center;
     padding: 5rem 2rem;
 }
@@ -105,10 +106,10 @@
 .empty-state p {
     color: var(--text-muted);
     margin-bottom: 1.5rem;
-}
+}*/
 
 /* ── Pagination ──────────────────────────────────────────────────── */
-.pagination {
+/*.pagination {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -120,10 +121,10 @@
 .page-info {
     font-size: .875rem;
     color: var(--text-muted);
-}
+}*/
 
 /* ── Image upload zone ───────────────────────────────────────────── */
-.image-upload-zone {
+/*.image-upload-zone {
     border: 2px dashed var(--border-accent);
     border-radius: var(--radius-lg);
     padding: 2.5rem;
@@ -222,10 +223,10 @@
     font-weight: 700;
     padding: 2px 5px;
     border-radius: 3px;
-}
+}*/
 
 /* ── Form layout helpers ─────────────────────────────────────────── */
-.form-page {
+/*.form-page {
     padding-top: 68px;
     min-height: 100vh;
 }
@@ -315,10 +316,10 @@
     margin-top: 1.5rem;
     padding-top: 1.5rem;
     border-top: 1px solid var(--border-subtle);
-}
+}*/
 
 /* Select floating label fix */
-.form-select {
+/*.form-select {
     padding-top: .75rem;
     padding-bottom: .75rem;
 }
@@ -339,10 +340,10 @@
     font-size: .72rem;
     color: var(--accent-1);
     font-weight: 600;
-}
+}*/
 
 /* Textarea */
-.textarea {
+/*.textarea {
     resize: vertical;
     padding-top: 1.1rem;
     min-height: 120px;
@@ -351,10 +352,10 @@
 .form-control.textarea:not(:placeholder-shown) + .form-label,
 .form-control.textarea:focus + .form-label {
     top: .55rem;
-}
+}*/
 
 /* Price prefix */
-.input-prefix-wrap {
+/*.input-prefix-wrap {
     position: relative;
 }
 
@@ -371,10 +372,10 @@
 
 .has-prefix {
     padding-left: 3rem !important;
-}
+}*/
 
 /* ── Dashboard ───────────────────────────────────────────────────── */
-.dashboard-page {
+/*.dashboard-page {
     padding-top: 68px;
     min-height: 100vh;
 }
@@ -454,10 +455,10 @@
 
 .text-red {
     color: #ef4444;
-}
+}*/
 
 /* Table */
-.dash-table-wrap {
+/*.dash-table-wrap {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-lg);
@@ -531,10 +532,10 @@
     align-items: center;
     gap: .4rem;
     flex-wrap: wrap;
-}
+}*/
 
 /* ── Breadcrumb ──────────────────────────────────────────────────── */
-.breadcrumb-bar {
+/*.breadcrumb-bar {
     background: rgba(255,255,255,.9);
     border-bottom: 1px solid var(--border-subtle);
     padding: .75rem 2rem;
@@ -561,10 +562,10 @@
 
     .breadcrumb-inner span {
         opacity: .4;
-    }
+    }*/
 
 /* ── Admin grid ──────────────────────────────────────────────────── */
-.admin-badge {
+/*.admin-badge {
     display: inline-flex;
     align-items: center;
     gap: .4rem;
@@ -773,10 +774,10 @@
         flex: 1;
         height: 50px;
         object-fit: cover;
-    }
+    }*/
 
 /* ── Responsive ──────────────────────────────────────────────────── */
-@media (max-width: 900px) {
+/*@media (max-width: 900px) {
     .detail-container {
         grid-template-columns: 1fr;
     }
@@ -818,7 +819,7 @@
     .form-section {
         padding: 1.25rem;
     }
-}
+}*/
 
 /* ═══════════════════════════════════════════════════════════════════
    ADDITION to Web/wwwroot/css/property.css
@@ -826,7 +827,7 @@
    ═══════════════════════════════════════════════════════════════════ */
 
 /* ── Become Owner button (inside profile dropdown) ───────────────── */
-.become-owner-btn {
+/*.become-owner-btn {
     display: block;
     width: 100%;
     padding: .6rem .85rem;
@@ -845,10 +846,10 @@
     .become-owner-btn:hover {
         opacity: .9;
         transform: translateY(-1px);
-    }
+    }*/
 
 /* ── Become Owner banner (Browse page) ───────────────────────────── */
-.become-owner-banner {
+/*.become-owner-banner {
     background: linear-gradient(90deg, rgba(99,102,241,.08) 0%, rgba(167,139,250,.08) 100%);
     border-top: 1px solid var(--border-accent);
     border-bottom: 1px solid var(--border-accent);
@@ -875,10 +876,10 @@
 .become-owner-banner-icon {
     font-size: 1.5rem;
     flex-shrink: 0;
-}
+}*/
 
 /* ── Become Owner card (Home page CTA) ───────────────────────────── */
-.become-owner-card {
+/*.become-owner-card {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -900,10 +901,10 @@
     color: var(--text-secondary);
     text-align: center;
     line-height: 1.6;
-}
+}*/
 
 /* ── Upgrade prompt (Dashboard for customers) ────────────────────── */
-.upgrade-prompt {
+/*.upgrade-prompt {
     max-width: 520px;
     margin: 4rem auto;
     text-align: center;
@@ -940,52 +941,52 @@
 .upgrade-perk {
     font-size: .9rem;
     color: var(--text-secondary);
-}
+}*/
 
 /* ═══════════════════════════════════════════════════════════════
    Standard Form Layout (Disable Floating Labels)
    Used for Create Property page
    ═══════════════════════════════════════════════════════════════ */
 
-.form-group {
+/*.form-group {
     display: flex;
     flex-direction: column;
-}
+}*/
 
     /* label above input */
-    .form-group .form-label {
+    /*.form-group .form-label {
         position: static !important;
         transform: none !important;
         margin-bottom: .35rem;
         font-size: .85rem;
         font-weight: 600;
         color: var(--text-secondary);
-    }
+    }*/
 
 /* normal placeholder */
-.form-control::placeholder {
+/*.form-control::placeholder {
     color: var(--text-muted) !important;
-}
+}*/
 
 /* remove floating behaviour */
-.form-control:focus + .form-label,
+/*.form-control:focus + .form-label,
 .form-control.has-value + .form-label,
 .form-select:focus + .form-label,
 .form-select.has-value + .form-label {
     top: auto;
     transform: none;
     font-size: .85rem;
-}
+}*/
 
 /* select label fix */
-.form-label-select {
+/*.form-label-select {
     position: static !important;
     transform: none !important;
     margin-bottom: .35rem;
-}
+}*/
 
 /* remove top padding needed for floating labels */
-.form-control,
+/*.form-control,
 .form-select {
     padding: .75rem .9rem !important;
-}
+}*/

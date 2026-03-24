@@ -1,6 +1,6 @@
 ﻿namespace RentalsAndProperties.Web.Models.Enums
 {
-    public enum BHKTypeWeb
+    public enum BhkTypeEnum
     {
         OneRK = 1,
         OneBHK = 2,

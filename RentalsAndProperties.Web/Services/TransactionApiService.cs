@@ -44,11 +44,6 @@ namespace RentalsAndProperties.Web.Services
             return await ReadAsync<List<TransactionResponseDto>>(response);
         }
 
-        public async Task<ApiResponseModel<TransactionResponseDto>?> GetByIdAsync(Guid transactionId)
-        {
-            var response = await HttpClient.GetAsync($"api/transactions/{transactionId}");
-            return await ReadAsync<TransactionResponseDto>(response);
-        }
 
         private async Task<ApiResponseModel<T>?> ReadAsync<T>(HttpResponseMessage response)
         {

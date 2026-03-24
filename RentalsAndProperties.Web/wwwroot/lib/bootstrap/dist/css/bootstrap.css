@@ -4910,14 +4910,6 @@ textarea.form-control-lg {
   color: #523e02;
 }
 
-.alert-danger {
-  color: #842029;
-  background-color: #f8d7da;
-  border-color: #f5c2c7;
-}
-.alert-danger .alert-link {
-  color: #6a1a21;
-}
 
 .alert-light {
   color: #636464;

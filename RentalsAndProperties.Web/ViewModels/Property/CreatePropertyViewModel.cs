@@ -17,7 +17,7 @@ namespace RentalsAndProperties.Web.ViewModels.Property
 
         [Required(ErrorMessage = "City is required.")]
         [Display(Name = "City")]
-        public CityWeb City { get; set; }
+        public CityEnum? City { get; set; }
 
         [Display(Name = "Pincode")]
         public string Pincode { get; set; } = string.Empty;
@@ -53,19 +53,19 @@ namespace RentalsAndProperties.Web.ViewModels.Property
 
         [Required(ErrorMessage = "Select property type.")]
         [Display(Name = "Property Type")]
-        public PropertyTypeWeb PropertyType { get; set; }
+        public PropertyTypeEnum? PropertyType { get; set; }
 
         [Required(ErrorMessage = "Select listing type.")]
         [Display(Name = "Listing Type")]
-        public ListingTypeWeb ListingType { get; set; }
+        public ListingTypeEnum? ListingType { get; set; }
 
         [Required(ErrorMessage = "Select BHK type.")]
         [Display(Name = "BHK Configuration")]
-        public BHKTypeWeb BHKType { get; set; }
+        public BhkTypeEnum? BHKType { get; set; }
 
         [Required(ErrorMessage = "Select furnishing status.")]
         [Display(Name = "Furnishing")]
-        public FurnishingTypeWeb FurnishingType { get; set; }
+        public FurnishingTypeEnum? FurnishingType { get; set; }
 
         [Required(ErrorMessage = "Available from date is required.")]
         [Display(Name = "Available From")]

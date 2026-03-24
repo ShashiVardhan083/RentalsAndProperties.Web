@@ -1,1333 +1,289 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Property.PropertyDetailViewModel
-@using RentalsAndProperties.Web.Helpers
-@using RentalsAndProperties.Web.Models
+
 @{
-    ViewData["Title"] = Model?.Title ?? "Property Details";
-
-    var isAuth = SessionHelper.IsAuthenticated(Context.Session);
-
-    var userIdStr = Context.Session.GetString("UserId");
-    Guid.TryParse(userIdStr, out var currentUserId);
-
-    var isOwner = Model?.OwnerId == currentUserId;
-
-    var images = Model?.Images ?? new List<PropertyImageViewModel>();
-    var primaryImg = images.FirstOrDefault(i => i.IsPrimary) ?? images.FirstOrDefault();
-
-    // Reviews passed by controller via ViewBag
-    var reviews = ViewBag.Reviews as List<ReviewViewModel> ?? new List<ReviewViewModel>();
-    var avgRating = reviews.Count > 0 ? reviews.Average(r => r.Rating) : 0.0;
-    var avgOwnerRes = reviews.Count > 0 ? reviews.Average(r => r.OwnerResponsiveness) : 0.0;
-    var avgPropAcc = reviews.Count > 0 ? reviews.Average(r => r.PropertyAccuracy) : 0.0;
+    ViewData["Title"] = Model.Title;
 }
 
 @if (Model == null)
 {
-    <div class="section" style="text-align:center;padding:5rem 2rem;">
+    <div class="text-center mt-5">
         <h2>Property not found</h2>
-        <a href="/Property" class="btn btn-primary mt-3">← Browse Properties</a>
+        <a asp-controller="Property" asp-action="Browse" class="btn btn-primary">
+            Browse Properties
+        </a>
     </div>
     return;
 }
 
-<!-- Fullscreen Image Lightbox -->
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image viewer"
-     style="display:none;" tabindex="-1">
-    <button class="lightbox-close" id="lightboxClose" aria-label="Close">&times;</button>
-    <button class="lightbox-prev" id="lightboxPrev" aria-label="Previous">&#8592;</button>
-    <button class="lightbox-next" id="lightboxNext" aria-label="Next">&#8594;</button>
-    <div class="lightbox-inner">
-        <img class="lightbox-img" id="lightboxImg" src="" alt="Property image" />
-        <div class="lightbox-counter" id="lightboxCounter"></div>
+<div class="container mt-4">
+
+    <div class="mb-3">
+        <h2>@Model.Title</h2>
+        <h4>
+            ₹@Model.Price.ToString("N0")
+            @if (Model.ListingType == "Rent")
+            {
+                <span>/month</span>
+            }
+        </h4>
+        <p>@Model.City, @Model.Address</p>
     </div>
+
+    <div class="mb-4">
+
+        @if (Model.AllImageUrls.Any())
+        {
+            <img id="mainImg"
+                 src="@Model.PrimaryImageUrl"
+                 class="main-image img-fluid rounded"
+                 style="width:100%; object-fit:contain;" />
+
+            <div class="mt-2 d-flex flex-wrap gap-2">
+                @foreach (var img in Model.AllImageUrls)
+                {
+                    <img src="@img"
+                         class="thumbnail"
+                         style="width:80px;height:60px;object-fit:cover;cursor:pointer;" />
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-muted">No images available</div>
+        }
+
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Description</h5>
+            <p>@Model.Description</p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Property Details</h5>
+
+            <div class="row">
+
+                <div class="col-md-4"><strong>Bedrooms:</strong> @Model.Bedrooms</div>
+                <div class="col-md-4"><strong>Bathrooms:</strong> @Model.Bathrooms</div>
+                <div class="col-md-4"><strong>Area:</strong> @Model.SquareFeet sq.ft</div>
+
+                <div class="col-md-4"><strong>Type:</strong> @Model.PropertyType</div>
+                <div class="col-md-4"><strong>BHK:</strong> @Model.BHKType</div>
+                <div class="col-md-4"><strong>Furnishing:</strong> @Model.FurnishingType</div>
+
+                <div class="col-md-4">
+                    <strong>Available From:</strong>
+                    @Model.AvailableFrom.ToString("dd MMM yyyy")
+                </div>
+
+                @if (Model.SecurityDeposit.HasValue)
+                {
+                    <div class="col-md-4">
+                        <strong>Deposit:</strong> ₹@Model.SecurityDeposit.Value.ToString("N0")
+                    </div>
+                }
+
+                <div class="col-md-4"><strong>Status:</strong> @Model.Status</div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Owner Details</h5>
+
+            <p><strong>Name:</strong> @Model.OwnerName</p>
+            <p><strong>Phone:</strong> @Model.OwnerPhone</p>
+            <p><strong>Trust Score:</strong> @Model.OwnerTrustScore / 100</p>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5>Reviews (@Model.ReviewCount)</h5>
+
+            @if (Model.Reviews.Any())
+            {
+                <p><strong>Average Rating:</strong> @Model.AverageRating.ToString("F1") / 5</p>
+
+                @foreach (var review in Model.Reviews)
+                {
+                    <div class="border p-3 mb-3 rounded">
+
+                        <strong>@review.ReviewerName</strong>
+                        <span class="text-muted">(@review.CreatedAt.ToString("dd MMM yyyy"))</span>
+
+                        <div>
+                            Rating: @review.Rating / 5
+                        </div>
+
+                        <p>@review.Comment</p>
+
+                    </div>
+                }
+            }
+            else
+            {
+                <p>No reviews yet.</p>
+            }
+        </div>
+    </div>
+
 </div>
 
-<div class="detail-page">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-bar">
-        <div class="breadcrumb-inner">
-            <a href="/">Home</a> <span>/</span>
-            <a href="/Property/Browse">Browse</a> <span>/</span>
-            <span>@Model.Title</span>
-        </div>
-    </div>
 
-    <div class="detail-container">
-        <!-- ── Left: Gallery + Details + Reviews ── -->
-        <div class="detail-main">
 
-            <!-- Image Gallery -->
-            <div class="gallery">
-                @if (images.Count > 0)
-                {
-                    <div class="gallery-primary" id="galleryPrimary">
-                        <img id="mainImg"
-                             src="@(primaryImg?.ImageUrl ?? "")"
-                             alt="@Model.Title"
-                             loading="eager"
-                             class="gallery-main-img"
-                             onclick="openLightbox(0)"
-                             style="cursor:zoom-in;" />
-                        <div class="gallery-badge @(Model.ListingType == "Rent" ? "badge-rent" : "badge-sale")">
-                            @Model.ListingType
-                        </div>
-                        <div class="gallery-zoom-hint">🔍 Click to enlarge</div>
-                        @if (images.Count > 1)
-                        {
-                            <div class="gallery-img-count">📷 @images.Count photos</div>
-                        }
-                        @if (reviews.Count > 0)
-                        {
-                            <div class="gallery-rating-pill">
-                                ⭐ @avgRating.ToString("F1") <span>(@reviews.Count)</span>
-                            </div>
-                        }
-                    </div>
 
-                    @if (images.Count > 1)
-                    {
-                        <div class="gallery-thumbs" id="galleryThumbs" role="list">
-                            @{
-                                int thumbIdx = 0;
-                            }
-                            @foreach (var img in images)
-                            {
-                                <img src="@img.ImageUrl"
-                                     alt="Photo @(thumbIdx + 1)"
-                                     loading="lazy"
-                                     class="thumb @(img.IsPrimary ? "active" : "")"
-                                     data-index="@thumbIdx"
-                                     onclick="switchImage(this)"
-                                     tabindex="0"
-                                     role="listitem" />
-                                thumbIdx++;
-                            }
-                        </div>
-                    }
-                }
-                else
-                {
-                    <div class="gallery-placeholder">
-                        <span>🏠</span>
-                        <p>No images uploaded yet</p>
-                        @if (isOwner)
-                        {
-                            <a href="/Property/UploadImages/@Model.PropertyId"
-                               class="btn btn-primary btn-sm mt-2">📸 Add Photos</a>
-                        }
-                    </div>
-                }
-            </div>
 
-            <!-- Description -->
-            <div class="detail-card">
-                <h2 class="detail-section-title">About this Property</h2>
-                <p class="detail-description">@Model.Description</p>
-            </div>
+<style>
+    .container {
+        max-width: 1100px;
+        margin: auto;
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-            <!-- Amenities -->
-            <div class="detail-card">
-                <h2 class="detail-section-title">Amenities &amp; Details</h2>
-                <div class="amenities-grid">
-                    <div class="amenity-item">
-                        <span class="amenity-icon">🛏</span>
-                        <span class="amenity-label">Bedrooms</span>
-                        <span class="amenity-value">@Model.Bedrooms</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">🚿</span>
-                        <span class="amenity-label">Bathrooms</span>
-                        <span class="amenity-value">@Model.Bathrooms</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">📐</span>
-                        <span class="amenity-label">Area</span>
-                        <span class="amenity-value">@Model.SquareFeet sq.ft</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">🏠</span>
-                        <span class="amenity-label">Type</span>
-                        <span class="amenity-value">@Model.PropertyType</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">🛋</span>
-                        <span class="amenity-label">Furnishing</span>
-                        <span class="amenity-value">@Model.FurnishingType</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">🏢</span>
-                        <span class="amenity-label">BHK</span>
-                        <span class="amenity-value">@Model.BHKType</span>
-                    </div>
-                    <div class="amenity-item">
-                        <span class="amenity-icon">📅</span>
-                        <span class="amenity-label">Available</span>
-                        <span class="amenity-value">@Model.AvailableFrom.ToString("MMM dd, yyyy")</span>
-                    </div>
-                    @if (Model.SecurityDeposit.HasValue && Model.SecurityDeposit > 0)
-                    {
-                        <div class="amenity-item">
-                            <span class="amenity-icon">🔒</span>
-                            <span class="amenity-label">Deposit</span>
-                            <span class="amenity-value">₹@Model.SecurityDeposit.Value.ToString("N0")</span>
-                        </div>
-                    }
-                </div>
-            </div>
+    h2 {
+        font-size: 26px;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
 
-            <!-- ══ REVIEWS SECTION ══════════════════════════════════════════ -->
-            <div class="detail-card reviews-card" id="reviewsSection">
-                <div class="reviews-header">
-                    <div>
-                        <h2 class="detail-section-title" style="margin-bottom:.25rem;">
-                            Reviews
-                            @if (reviews.Count > 0)
-                            {
-                                <span class="reviews-count-badge">@reviews.Count</span>
-                            }
-                        </h2>
-                        @if (reviews.Count > 0)
-                        {
-                            <div class="reviews-avg-row">
-                                <div class="reviews-avg-stars">
-                                    @for (int s = 1; s <= 5; s++)
-                                    {
-                                        <span class="avg-star @(s <= Math.Round(avgRating) ? "filled" : "")">★</span>
-                                    }
-                                </div>
-                                <span class="reviews-avg-num">@avgRating.ToString("F1")</span>
-                                <span class="reviews-avg-label">out of 5 · @reviews.Count review@(reviews.Count != 1 ? "s" : "")</span>
-                            </div>
-                        }
-                    </div>
+    h4 {
+        color: #4f46e5;
+        margin-bottom: 10px;
+    }
 
-                    @if (isAuth && !isOwner)
-                    {
-                        <a asp-controller="Review" asp-action="Create"
-                           asp-route-propertyId="@Model.PropertyId"
-                           asp-route-reviewType="Interaction"
-                           class="btn btn-secondary btn-sm">
-                            ✍️ Write a Review
-                        </a>
-                    }
-                </div>
+    h5 {
+        margin-bottom: 12px;
+        font-weight: 600;
+    }
 
-                @if (reviews.Count > 0)
-                {
-                    <!-- Sub-rating averages -->
-                    <div class="reviews-sub-averages">
-                        <div class="sub-avg-item">
-                            <span class="sub-avg-label">Owner Responsiveness</span>
-                            <div class="sub-avg-bar-wrap">
-                                <div class="sub-avg-bar">
-                                    <div class="sub-avg-fill" style="width:@((avgOwnerRes / 5.0 * 100).ToString("F0"))%"></div>
-                                </div>
-                                <span class="sub-avg-val">@avgOwnerRes.ToString("F1")</span>
-                            </div>
-                        </div>
-                        <div class="sub-avg-item">
-                            <span class="sub-avg-label">Property Accuracy</span>
-                            <div class="sub-avg-bar-wrap">
-                                <div class="sub-avg-bar">
-                                    <div class="sub-avg-fill" style="width:@((avgPropAcc / 5.0 * 100).ToString("F0"))%"></div>
-                                </div>
-                                <span class="sub-avg-val">@avgPropAcc.ToString("F1")</span>
-                            </div>
-                        </div>
-                    </div>
+    .main-image {
+        width: 100%;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 10px;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+    }
 
-                    <!-- Individual review cards -->
-                    <div class="review-list">
-                        @foreach (var review in reviews)
-                        {
-                            <div class="review-item @(review.ReviewType == "Transaction" ? "review-item-tx" : "")">
-                                <div class="review-item-top">
-                                    <div class="review-item-author">
-                                        <div class="review-author-avatar">
-                                            @(review.ReviewerName.Length > 0 ? review.ReviewerName[0].ToString().ToUpper() : "?")
-                                        </div>
-                                        <div>
-                                            <div class="review-author-name">@review.ReviewerName</div>
-                                            <div class="review-meta">
-                                                <span class="review-type-badge review-type-@review.ReviewType.ToLower()">
-                                                    @(review.ReviewType == "Transaction" ? "💳 Transaction" : "👁 Interaction")
-                                                </span>
-                                                <span class="review-date">@review.CreatedAt.ToString("MMM dd, yyyy")</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="review-stars">
-                                        @for (int s = 1; s <= 5; s++)
-                                        {
-                                            <span class="rev-star @(s <= review.Rating ? "filled" : "")">★</span>
-                                        }
-                                    </div>
-                                </div>
-
-                                <p class="review-comment">@review.Comment</p>
-
-                                <div class="review-sub-ratings">
-                                    <span class="review-sub">
-                                        🤝 Owner: <strong>@review.OwnerResponsiveness/5</strong>
-                                    </span>
-                                    <span class="review-sub">
-                                        🏠 Accuracy: <strong>@review.PropertyAccuracy/5</strong>
-                                    </span>
-                                    @if (review.PriceSatisfaction.HasValue)
-                                    {
-                                        <span class="review-sub">
-                                            💰 Price: <strong>@review.PriceSatisfaction/5</strong>
-                                        </span>
-                                    }
-                                    @if (review.WouldRecommend.HasValue)
-                                    {
-                                        <span class="review-recommend @(review.WouldRecommend.Value ? "recommend-yes" : "recommend-no")">
-                                            @(review.WouldRecommend.Value ? "👍 Recommends" : "👎 Doesn't recommend")
-                                        </span>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
-                else
-                {
-                    <div class="reviews-empty">
-                        <div class="reviews-empty-icon">⭐</div>
-                        <p>No reviews yet.</p>
-                        @if (isAuth && !isOwner)
-                        {
-                            <a asp-controller="Review" asp-action="Create"
-                               asp-route-propertyId="@Model.PropertyId"
-                               asp-route-reviewType="Interaction"
-                               class="btn btn-secondary btn-sm mt-2">
-                                Be the first to review →
-                            </a>
-                        }
-                    </div>
-                }
-            </div>
-            <!-- ══ END REVIEWS ══════════════════════════════════════════════ -->
-
-        </div>
-
-        <!-- ── Right: Sidebar ── -->
-        <div class="detail-sidebar">
-
-            <!-- Price Card -->
-            <div class="sidebar-card price-card">
-                <div class="sidebar-price">
-                    ₹@Model.Price.ToString("N0")
-                    @if (Model.ListingType == "Rent")
-                    {
-                        <span>/month</span>
-                    }
-                </div>
-                <h1 class="sidebar-title">@Model.Title</h1>
-                <div class="sidebar-location">📍 @Model.City</div>
-                @if (!string.IsNullOrEmpty(Model.Address))
-                {
-                    <div class="sidebar-address">@Model.Address</div>
-                }
-                @if (reviews.Count > 0)
-                {
-                    <div class="sidebar-rating">
-                        @for (int s = 1; s <= 5; s++)
-                        {
-                            <span class="avg-star @(s <= Math.Round(avgRating) ? "filled" : "")">★</span>
-                        }
-                        <span class="sidebar-rating-text">@avgRating.ToString("F1") (@reviews.Count)</span>
-                    </div>
-                }
-                @if (Model.Status == "Rejected" && !string.IsNullOrEmpty(Model.RejectionReason))
-                {
-                    <div class="alert alert-error mt-2" style="font-size:.85rem;">
-                        <strong>Rejected:</strong> @Model.RejectionReason
-                    </div>
-                }
-                <div class="status-badge status-@Model.Status.ToLower() mt-2">@Model.Status</div>
-            </div>
-
-            <!-- Owner Card -->
-            <div class="sidebar-card owner-card">
-                <h3 class="owner-card-title">Property Owner</h3>
-                <div class="owner-info">
-                    <div class="owner-avatar">
-                        @(Model.OwnerName.Length > 0 ? Model.OwnerName[0].ToString().ToUpper() : "?")
-                    </div>
-                    <div>
-                        <div class="owner-name">@Model.OwnerName</div>
-                        <div class="trust-score">
-                            <span class="trust-star">⭐</span>
-                            Trust Score: <strong>@Model.OwnerTrustScore.ToString("F0")/100</strong>
-                        </div>
-                    </div>
-                </div>
-                <div class="owner-phone">
-                    @if (isAuth)
-                    {
-                        <div class="phone-revealed">📞 @Model.OwnerPhone</div>
-                    }
-                    else
-                    {
-                        <div class="masked-phone"
-                             onclick="window.location.href='/Auth/Login?returnUrl=/Property/Details/@Model.PropertyId'"
-                             role="button" style="cursor:pointer;">
-                            📞 +91 ••••••@Model.OwnerPhone[^4..]
-                            <span style="font-size:.72rem;opacity:.7;">(Login to reveal)</span>
-                        </div>
-                    }
-                </div>
-
-                @if (isAuth && !isOwner)
-                {
-                    <!-- Start Chat Button -->
-                    <a asp-controller="Chat"
-                       asp-action="Conversation"
-                       asp-route-propertyId="@Model.PropertyId"
-                       asp-route-otherUserId="@Model.OwnerId"
-                       asp-route-otherUserName="@Model.OwnerName"
-                       asp-route-propertyTitle="@Model.Title"
-                       class="btn btn-primary btn-full"
-                       style="margin-top:.75rem;">
-                        💬 Chat with Owner
-                    </a>
-                }
-            </div>
-
-            <!-- Action Card (non-owners only) -->
-            @if (isAuth && Model.Status == "Active" && !isOwner)
-            {
-                <div class="sidebar-card">
-                    <h3 class="owner-card-title">Interested in this property?</h3>
-                    <a asp-controller="Transaction" asp-action="Initiate"
-                       asp-route-propertyId="@Model.PropertyId"
-                       class="btn btn-primary btn-sm w-full">
-                        💳 Initiate Transaction
-                    </a>
-                    <a asp-controller="Review" asp-action="Create"
-                       asp-route-propertyId="@Model.PropertyId"
-                       asp-route-reviewType="Interaction"
-                       class="btn btn-secondary btn-sm w-full mt-2"
-                       style="display:block;text-align:center;">
-                        ⭐ Write Interaction Review
-                    </a>
-                    @if (isAuth && !isOwner)
-                    {
-                        <a href="/Report/Create?targetType=Property&targetId=@Model.PropertyId&targetTitle=@Uri.EscapeDataString(Model.Title)"
-                           class="btn btn-ghost btn-sm w-full mt-1"
-                           style="display:block;text-align:center;">
-                            🚩 Report this listing
-                        </a>
-                    }
-                    @if (reviews.Count > 0)
-                    {
-                        <a href="#reviewsSection" class="btn btn-ghost btn-sm w-full mt-1"
-                           style="display:block;text-align:center;">
-                            👁 Read @reviews.Count Review@(reviews.Count != 1 ? "s" : "")
-                        </a>
-                    }
-                </div>
-            }
-
-            <!-- Owner Manage Card -->
-            @if (isOwner)
-            {
-                <div class="sidebar-card">
-                    <h3 class="owner-card-title">Manage Listing</h3>
-                    <div class="flex gap-2" style="flex-direction:column;">
-                        <a href="/Property/UploadImages/@Model.PropertyId" class="btn btn-secondary btn-sm">
-                            📸 Manage Images
-                            @if (images.Count > 0)
-                            {
-                                <span class="img-count-badge">@images.Count</span>
-                            }
-                        </a>
-                        <a href="/Property/Edit/@Model.PropertyId" class="btn btn-secondary btn-sm">
-                            ✏️ Edit Property
-                        </a>
-                        <form asp-controller="Property" asp-action="Delete"
-                              asp-route-id="@Model.PropertyId" method="post"
-                              onsubmit="return confirm('Delete this property? This cannot be undone.')">
-                            @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-danger btn-sm w-full">
-                                🗑 Delete Property
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            }
-        </div>
-    </div>
-</div>
-
-@section HeadStyles {
-    <style>
-        /* ── Breadcrumb ── */
-        .breadcrumb-bar {
-            background: rgba(255,255,255,.8);
-            border-bottom: 1px solid var(--border-subtle);
-            padding: .75rem 2rem;
-        }
-
-        .breadcrumb-inner {
-            max-width: 1280px;
-            margin: 0 auto;
-            font-size: .85rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-        }
-
-            .breadcrumb-inner a {
-                color: var(--accent-1);
-            }
-
-            .breadcrumb-inner span {
-                opacity: .5;
-            }
-
-        /* ── Layout ── */
-        .detail-page {
-            padding-top: 68px;
-            min-height: 100vh;
-        }
-
-        .detail-container {
-            max-width: 1280px;
-            margin: 0 auto;
-            padding: 2rem;
-            display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: 2rem;
-            align-items: start;
-        }
-
-        .detail-main {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-        }
-
-        /* ── Gallery ── */
-        .gallery-primary {
-            position: relative;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            aspect-ratio: 16/9;
-            background: var(--gradient-card);
-        }
-
-        .gallery-main-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform .4s var(--transition);
-            display: block;
-        }
-
-        .gallery-primary:hover .gallery-main-img {
+        .main-image:hover {
             transform: scale(1.02);
         }
 
-        .gallery-badge {
-            position: absolute;
-            top: 1rem;
-            left: 1rem;
-            padding: .3rem .85rem;
-            border-radius: 100px;
-            font-size: .75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .06em;
+    .thumbnail-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+
+    .thumbnail {
+        width: 80px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+        cursor: pointer;
+        opacity: 0.7;
+        border: 2px solid transparent;
+        transition: 0.2s;
+    }
+
+        .thumbnail:hover,
+        .thumbnail.active {
+            opacity: 1;
+            border-color: #4f46e5;
         }
 
-        .badge-rent {
-            background: rgba(67,233,123,.2);
-            border: 1px solid rgba(67,233,123,.4);
-            color: #43e97b;
-        }
+    .card {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 15px;
+        background: #fff;
+        margin-bottom: 20px;
+    }
 
-        .badge-sale {
-            background: rgba(247,151,30,.2);
-            border: 1px solid rgba(247,151,30,.4);
-            color: #f59e0b;
-        }
+    .card-body {
+        padding: 10px;
+    }
 
-        .gallery-zoom-hint {
-            position: absolute;
-            bottom: 1rem;
-            right: 1rem;
-            background: rgba(0,0,0,.6);
-            color: #fff;
-            font-size: .75rem;
-            padding: .3rem .7rem;
-            border-radius: 100px;
-            pointer-events: none;
-        }
+    .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
 
-        .gallery-img-count {
-            position: absolute;
-            bottom: 1rem;
-            left: 1rem;
-            background: rgba(0,0,0,.6);
-            color: #fff;
-            font-size: .78rem;
-            padding: .3rem .7rem;
-            border-radius: 100px;
-        }
+    .col-md-4 {
+        flex: 1 1 calc(33.33% - 10px);
+        font-size: 14px;
+    }
 
-        .gallery-rating-pill {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: rgba(0,0,0,.65);
-            color: #fcd34d;
-            font-size: .82rem;
-            font-weight: 700;
-            padding: .3rem .75rem;
-            border-radius: 100px;
-            display: flex;
-            align-items: center;
-            gap: .3rem;
-        }
+    .review-box {
+        border: 1px solid #e5e7eb;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        background: #fafafa;
+    }
 
-            .gallery-rating-pill span {
-                color: rgba(255,255,255,.7);
-                font-weight: 400;
-                font-size: .75rem;
-            }
-
-        .gallery-thumbs {
-            display: flex;
-            gap: .75rem;
-            margin-top: .75rem;
-            flex-wrap: wrap;
-        }
-
-        .thumb {
-            width: 80px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: border-color .2s, transform .2s, opacity .2s;
-            opacity: .65;
-        }
-
-            .thumb.active, .thumb:hover {
-                border-color: var(--accent-1);
-                opacity: 1;
-                transform: scale(1.05);
-            }
-
-        .gallery-placeholder {
-            height: 280px;
-            background: var(--gradient-card);
-            border-radius: var(--radius-lg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: .75rem;
-            font-size: 3rem;
-            color: var(--text-muted);
-        }
-
-        /* ── Detail cards ── */
-        .detail-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 1.75rem;
-        }
-
-        .detail-section-title {
-            font-size: 1.15rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .detail-description {
-            color: var(--text-secondary);
-            line-height: 1.8;
-            white-space: pre-line;
-        }
-
-        .amenities-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(140px,1fr));
-            gap: 1rem;
-        }
-
-        .amenity-item {
-            background: rgba(99,102,241,.06);
-            border: 1px solid rgba(99,102,241,.1);
-            border-radius: var(--radius-md);
-            padding: .85rem;
-            text-align: center;
-        }
-
-        .amenity-icon {
+        .review-box strong {
             display: block;
-            font-size: 1.5rem;
-            margin-bottom: .35rem;
+            margin-bottom: 5px;
         }
 
-        .amenity-label {
-            display: block;
-            font-size: .72rem;
-            color: var(--text-muted);
-            margin-bottom: .2rem;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .amenity-value {
-            display: block;
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        /* ── Sidebar ── */
-        .detail-sidebar {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            position: sticky;
-            top: 80px;
-        }
-
-        .sidebar-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-        }
-
-        .sidebar-price {
-            font-family: 'Syne',sans-serif;
-            font-size: 2rem;
-            font-weight: 800;
-            color: #a78bfa;
-            line-height: 1;
-            margin-bottom: .5rem;
-        }
-
-            .sidebar-price span {
-                font-size: .9rem;
-                font-weight: 500;
-                color: var(--text-muted);
-            }
-
-        .sidebar-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: .4rem;
-        }
-
-        .sidebar-location {
-            color: var(--text-secondary);
-            font-size: .9rem;
-            margin-bottom: .25rem;
-        }
-
-        .sidebar-address {
-            color: var(--text-muted);
-            font-size: .8rem;
-            line-height: 1.5;
-        }
-
-        .sidebar-rating {
-            display: flex;
-            align-items: center;
-            gap: .4rem;
-            margin: .6rem 0;
-        }
-
-        .sidebar-rating-text {
-            font-size: .82rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .owner-card-title {
-            font-size: .9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        .owner-info {
-            display: flex;
-            align-items: center;
-            gap: .85rem;
-            margin-bottom: 1rem;
-        }
-
-        .owner-avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: var(--gradient-btn);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: #fff;
-            flex-shrink: 0;
-        }
-
-        .owner-name {
-            font-weight: 600;
-            font-size: .95rem;
-        }
-
-        .trust-score {
-            font-size: .8rem;
-            color: var(--text-muted);
-            margin-top: .2rem;
-        }
-
-        .trust-star {
-            color: #f59e0b;
-        }
-
-        .phone-revealed {
-            font-size: .9rem;
-            font-weight: 600;
-            color: var(--accent-3);
-            padding: .5rem .75rem;
-            background: rgba(67,233,123,.08);
-            border-radius: var(--radius-sm);
-        }
-
-        .img-count-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 20px;
-            height: 20px;
-            background: var(--accent-1);
-            color: #fff;
-            border-radius: 50%;
-            font-size: .7rem;
-            font-weight: 700;
-            margin-left: .3rem;
-        }
-
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            padding: .3rem .85rem;
-            border-radius: 100px;
-            font-size: .78rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .status-active {
-            background: rgba(67,233,123,.15);
-            border: 1px solid rgba(67,233,123,.3);
-            color: #43e97b;
-        }
-
-        .status-pendingapproval {
-            background: rgba(247,151,30,.15);
-            border: 1px solid rgba(247,151,30,.3);
-            color: #f59e0b;
-        }
-
-        .status-rejected {
-            background: rgba(239,68,68,.15);
-            border: 1px solid rgba(239,68,68,.3);
-            color: #fca5a5;
-        }
-
-        /* ═══════════════════════════════════════════════════
-           REVIEWS
-           ═══════════════════════════════════════════════════ */
-        .reviews-card {
-            padding: 1.75rem;
-        }
-
-        .reviews-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.25rem;
-        }
-
-        .reviews-count-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 24px;
-            height: 24px;
-            background: var(--accent-1);
-            color: #fff;
-            border-radius: 100px;
-            font-size: .72rem;
-            font-weight: 700;
-            padding: 0 .5rem;
-            margin-left: .5rem;
-            vertical-align: middle;
-        }
-
-        /* Average stars row */
-        .reviews-avg-row {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            margin-top: .35rem;
-            flex-wrap: wrap;
-        }
-
-        .reviews-avg-stars {
-            display: flex;
-            gap: .05rem;
-        }
-
-        .avg-star {
-            font-size: 1.05rem;
-            color: var(--border-subtle);
-            transition: color .15s;
-        }
-
-            .avg-star.filled {
-                color: #f59e0b;
-            }
-
-        .reviews-avg-num {
-            font-family: 'Syne',sans-serif;
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #f59e0b;
-        }
-
-        .reviews-avg-label {
-            font-size: .8rem;
-            color: var(--text-muted);
-        }
-
-        /* Sub-rating averages */
-        .reviews-sub-averages {
-            display: flex;
-            flex-direction: column;
-            gap: .75rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem 1.25rem;
-            background: rgba(108,99,255,.04);
-            border: 1px solid rgba(108,99,255,.1);
-            border-radius: var(--radius-md);
-        }
-
-        .sub-avg-item {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .sub-avg-label {
-            font-size: .8rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-            min-width: 170px;
-            flex-shrink: 0;
-        }
-
-        .sub-avg-bar-wrap {
-            display: flex;
-            align-items: center;
-            gap: .6rem;
-            flex: 1;
-        }
-
-        .sub-avg-bar {
-            flex: 1;
-            height: 6px;
-            background: rgba(108,99,255,.12);
-            border-radius: 100px;
-            overflow: hidden;
-        }
-
-        .sub-avg-fill {
-            height: 100%;
-            background: linear-gradient(90deg,#6c63ff,#43e97b);
-            border-radius: 100px;
-            transition: width .6s ease;
-        }
+    .text-muted {
+        color: #6b7280;
+        font-size: 12px;
+    }
 
-        .sub-avg-val {
-            font-size: .82rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            min-width: 24px;
-        }
-
-        /* Individual review items */
-        .review-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .review-item {
-            background: rgba(255,255,255,.03);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 1.25rem;
-            transition: border-color .2s;
-        }
-
-            .review-item:hover {
-                border-color: var(--border-accent);
-            }
-
-        .review-item-tx {
-            border-left: 3px solid var(--accent-1);
-        }
-
-        .review-item-top {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: .75rem;
-            margin-bottom: .85rem;
-            flex-wrap: wrap;
-        }
-
-        .review-item-author {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .review-author-avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: var(--gradient-btn);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: .9rem;
-            font-weight: 700;
-            color: #fff;
-            flex-shrink: 0;
-        }
-
-        .review-author-name {
-            font-weight: 700;
-            font-size: .9rem;
-        }
-
-        .review-meta {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            margin-top: .2rem;
-            flex-wrap: wrap;
-        }
-
-        .review-type-badge {
-            padding: .15rem .55rem;
-            border-radius: 100px;
-            font-size: .68rem;
-            font-weight: 700;
-        }
-
-        .review-type-transaction {
-            background: rgba(108,99,255,.15);
-            color: #a78bfa;
-        }
-
-        .review-type-interaction {
-            background: rgba(67,233,123,.12);
-            color: #43e97b;
-        }
-
-        .review-date {
-            font-size: .75rem;
-            color: var(--text-muted);
-        }
-
-        .review-stars {
-            display: flex;
-            gap: .05rem;
-            flex-shrink: 0;
-        }
-
-        .rev-star {
-            font-size: 1.1rem;
-            color: var(--border-subtle);
-        }
-
-            .rev-star.filled {
-                color: #f59e0b;
-            }
-
-        .review-comment {
-            font-size: .9rem;
-            color: var(--text-secondary);
-            line-height: 1.7;
-            margin-bottom: .75rem;
-        }
-
-        .review-sub-ratings {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            flex-wrap: wrap;
-        }
-
-        .review-sub {
-            font-size: .78rem;
-            color: var(--text-muted);
-            background: rgba(255,255,255,.04);
-            border: 1px solid var(--border-subtle);
-            padding: .2rem .6rem;
-            border-radius: 100px;
-        }
+    .btn {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 500;
+    }
 
-            .review-sub strong {
-                color: var(--text-primary);
-            }
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
 
-        .review-recommend {
-            font-size: .78rem;
-            font-weight: 700;
-            padding: .2rem .65rem;
-            border-radius: 100px;
+        .btn-primary:hover {
+            background: #4338ca;
         }
+</style>
 
-        .recommend-yes {
-            background: rgba(67,233,123,.12);
-            color: #43e97b;
-        }
-
-        .recommend-no {
-            background: rgba(239,68,68,.12);
-            color: #fca5a5;
-        }
-
-        /* Empty state */
-        .reviews-empty {
-            text-align: center;
-            padding: 2.5rem 1rem;
-        }
-
-        .reviews-empty-icon {
-            font-size: 2.5rem;
-            margin-bottom: .5rem;
-        }
-
-        .reviews-empty p {
-            color: var(--text-muted);
-            font-size: .9rem;
-        }
-
-        /* ── Lightbox ── */
-        .lightbox {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            background: rgba(0,0,0,.92);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn .2s ease;
-        }
-
-        .lightbox-inner {
-            position: relative;
-            max-width: 90vw;
-            max-height: 90vh;
-        }
-
-        .lightbox-img {
-            max-width: 90vw;
-            max-height: 85vh;
-            object-fit: contain;
-            border-radius: var(--radius-md);
-            user-select: none;
-        }
-
-        .lightbox-close {
-            position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            color: #fff;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .2s;
-        }
-
-            .lightbox-close:hover {
-                background: rgba(255,255,255,.2);
-            }
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
 
-        .lightbox-prev, .lightbox-next {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            color: #fff;
-            font-size: 1.4rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background .2s;
-        }
-
-        .lightbox-prev {
-            left: 1.5rem;
-        }
-
-        .lightbox-next {
-            right: 1.5rem;
-        }
-
-            .lightbox-prev:hover, .lightbox-next:hover {
-                background: rgba(255,255,255,.25);
-            }
-
-        .lightbox-counter {
-            position: fixed;
-            bottom: 2rem;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,.5);
-            color: #fff;
-            font-size: .85rem;
-            padding: .4rem 1rem;
-            border-radius: 100px;
-        }
-
-        @@keyframes fadeIn {
-            from {
-                opacity: 0
-            }
+        const mainImage = document.getElementById("mainImg");
+        const thumbnails = document.querySelectorAll(".thumbnail");
 
-            to {
-                opacity: 1
-            }
-        }
-
-        @@media(max-width:900px) {
-            .detail-container {
-                grid-template-columns: 1fr;
-            }
-
-            .detail-sidebar {
-                position: static;
-            }
-
-            .sub-avg-label {
-                min-width: 140px;
-            }
-        }
+        if (!mainImage || thumbnails.length === 0) return;
 
-        @@media(max-width:600px) {
-            .reviews-header {
-                flex-direction: column;
-            }
-        }
-    </style>
-}
+        thumbnails.forEach((thumb) => {
+            thumb.addEventListener("click", function () {
 
-@section Scripts {
-    <script>
-        const galleryImages = @Html.Raw(
-                    System.Text.Json.JsonSerializer.Serialize(
-                            images.OrderByDescending(i => i.IsPrimary).Select(i => i.ImageUrl).ToList()
-                    )
-            );
-    let currentLightboxIdx = 0;
+                mainImage.src = this.src;
 
-        function openLightbox(startIdx) {
-            if (!galleryImages.length) return;
-            currentLightboxIdx = startIdx;
-            updateLightbox();
-            const lb = document.getElementById('lightbox');
-            lb.style.display = 'flex';
-            lb.focus();
-            document.body.style.overflow = 'hidden';
-        }
-        function closeLightbox() {
-            document.getElementById('lightbox').style.display = 'none';
-            document.body.style.overflow = '';
-        }
-        function updateLightbox() {
-            document.getElementById('lightboxImg').src = galleryImages[currentLightboxIdx];
-            document.getElementById('lightboxCounter').textContent =
-                `${currentLightboxIdx + 1} / ${galleryImages.length}`;
-            document.getElementById('lightboxPrev').style.display = currentLightboxIdx > 0 ? 'flex' : 'none';
-            document.getElementById('lightboxNext').style.display =
-                currentLightboxIdx < galleryImages.length - 1 ? 'flex' : 'none';
-        }
-        document.getElementById('lightboxClose')?.addEventListener('click', closeLightbox);
-        document.getElementById('lightboxPrev')?.addEventListener('click', () => {
-            if (currentLightboxIdx > 0) { currentLightboxIdx--; updateLightbox(); }
-        });
-        document.getElementById('lightboxNext')?.addEventListener('click', () => {
-            if (currentLightboxIdx < galleryImages.length - 1) { currentLightboxIdx++; updateLightbox(); }
-        });
-        document.getElementById('lightbox')?.addEventListener('click', function(e) {
-            if (e.target === this) closeLightbox();
-        });
-        document.addEventListener('keydown', e => {
-            const lb = document.getElementById('lightbox');
-            if (!lb || lb.style.display === 'none') return;
-            if (e.key === 'Escape') closeLightbox();
-            if (e.key === 'ArrowLeft' && currentLightboxIdx > 0) { currentLightboxIdx--; updateLightbox(); }
-            if (e.key === 'ArrowRight' && currentLightboxIdx < galleryImages.length - 1) { currentLightboxIdx++; updateLightbox(); }
-        });
-        function switchImage(thumb) {
-            const idx = parseInt(thumb.dataset.index, 10);
-            document.getElementById('mainImg').src = thumb.src;
-            document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
-            thumb.classList.add('active');
-            currentLightboxIdx = idx;
-        }
-        document.querySelectorAll('.thumb').forEach((thumb, i) => {
-            thumb.addEventListener('keydown', e => {
-                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); switchImage(thumb); }
-                if (e.key === 'ArrowRight') document.querySelectorAll('.thumb')[i + 1]?.focus();
-                if (e.key === 'ArrowLeft') document.querySelectorAll('.thumb')[i - 1]?.focus();
+                thumbnails.forEach(t => t.classList.remove("active"));
+                this.classList.add("active");
             });
         });
 
-        // Animate sub-rating bars on load
-        document.addEventListener('DOMContentLoaded', () => {
-            document.querySelectorAll('.sub-avg-fill').forEach(bar => {
-                const w = bar.style.width;
-                bar.style.width = '0';
-                setTimeout(() => bar.style.width = w, 200);
-            });
+        mainImage.addEventListener("click", function () {
+            this.style.transform =
+                this.style.transform === "scale(1.5)"
+                ? "scale(1)"
+                : "scale(1.5)";
         });
-    </script>
-}
+
+    });
+</script>

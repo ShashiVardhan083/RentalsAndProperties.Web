@@ -1,113 +1,247 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Auth.LoginViewModel
+
 @{
     ViewData["Title"] = "Sign In";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="auth-page">
-    <div class="hero-orb orb-1" aria-hidden="true"></div>
-    <div class="hero-orb orb-2" aria-hidden="true"></div>
 
-    <div class="auth-card" role="main" aria-labelledby="loginTitle">
+    <div class="auth-card">
 
-        <!-- Logo + Title -->
-        <div class="auth-logo">
-            <div class="auth-logo-icon" aria-hidden="true">🔑</div>
-            <h1 class="auth-title" id="loginTitle">Welcome Back</h1>
-            <p class="auth-subtitle">Sign in to your RentalsAndProperties account</p>
-        </div>
+        <h1>Welcome Back</h1>
+        <p>Sign in to your account</p>
 
-        <!-- Server validation summary -->
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-error" role="alert" id="serverError">
-                <span aria-hidden="true">⚠</span>
-                <div>
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
-                </div>
-            </div>
-        }
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
 
-        <form asp-action="Login" asp-controller="Auth" method="post"
-              id="loginForm" novalidate autocomplete="on">
+        <form asp-action="Login" asp-controller="Auth" method="post" id="loginForm">
 
             @Html.AntiForgeryToken()
 
-            @if (!string.IsNullOrEmpty(ViewBag.ReturnUrl?.ToString()))
+            @if (ViewBag.ReturnUrl != null)
             {
-                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl">
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
             }
 
-            <!-- Phone Field (partial view) -->
-            @await Html.PartialAsync("_PhoneInput", Model.PhoneNumber,
-            new ViewDataDictionary(ViewData) {
-                      //  {"Label","Phone Number"},
-                        { "FieldId", "PhoneNumber" },
-                        { "FieldName", "PhoneNumber" },
-                       { "Label", "Phone Number" }
-                        })
+            <div class="form-group">
 
-            <!-- Validation message from model state -->
-           <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
+                @Html.LabelFor(m => m.PhoneNumber)
 
-            <!-- Password Field (partial view) -->
-            @await Html.PartialAsync("_PasswordInput", (object)null!,
-                        new ViewDataDictionary(ViewData) {
-                        { "FieldId", "Password" },
-                        { "FieldName", "Password" },
-                        { "Label", "Password" },
-                        { "ShowStrength", false }
-                        })
+                @Html.TextBoxFor(m => m.PhoneNumber, new
+                {
+                    @class = "form-control",
+                                type = "tel",
+                                placeholder = "+91 9876543210"
+                                })
 
-            <span asp-validation-for="Password" class="invalid-feedback"></span>
+                @Html.ValidationMessageFor(m => m.PhoneNumber,
+                                "",
+                                new { @class = "text-danger" })
 
-            <!-- Remember me -->
-            <div class="flex items-center justify-between mb-3" style="margin-top:-.5rem;">
-                <label class="flex items-center gap-2" style="cursor:pointer;font-size:.875rem;color:var(--text-secondary);">
-                    <input type="checkbox" asp-for="RememberMe"
-                           style="accent-color:var(--accent-1);width:16px;height:16px;">
-                    Remember me
-                </label>
-                <a href="/Auth/ForgotPassword" class="auth-link" style="font-size:.875rem;">
-                    Forgot password?
-                </a>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-lg" id="loginBtn">
-                <span class="btn-text">Sign In</span>
-                <span class="btn-spinner" aria-hidden="true"></span>
+            <div class="form-group">
+
+                @Html.LabelFor(m => m.Password)
+
+                @Html.PasswordFor(m => m.Password, new
+                                {
+                    @class = "form-control",
+                                placeholder = "Enter password"
+                                })
+
+                @Html.ValidationMessageFor(m => m.Password,
+                                "",
+                                new { @class = "text-danger" })
+
+            </div>
+
+            <div class="form-group" style="display:flex; justify-content:space-between; align-items:center;">
+
+                <label style="display:flex; align-items:center; gap:8px;">
+                    @Html.CheckBoxFor(m => m.RememberMe)
+                    Remember me
+                </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" id="loginBtn">
+                Sign In
             </button>
+
         </form>
 
-        <div class="auth-footer">
+        <div style="margin-top:15px;color:aqua">
             Don't have an account?
-            <a href="/Auth/Register" class="auth-link">Create one free →</a>
+            <a href="/Auth/Register">Create one →</a>
         </div>
+
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form    = document.getElementById('loginForm');
-            const loginBtn = document.getElementById('loginBtn');
+<style>
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #eef2ff, #f8fafc);
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-            Validator.attachLiveValidation(form);
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
 
-            form.addEventListener('submit', function (e) {
-                // Client-side validation before submit
-                const isValid = Validator.validateForm(form);
-                if (!isValid) {
-                    e.preventDefault();
-                    Toast.error('Please fix the errors above.');
-                    return;
-                }
-                setButtonLoading(loginBtn, true);
-                // Button stays loading while form submits (server-side redirect resets it)
+        .auth-card h1 {
+            margin-bottom: 6px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .auth-card p {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        transition: 0.2s ease;
+    }
+
+        .form-control:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+        }
+
+    .text-danger {
+        font-size: 12px;
+        color: #dc2626;
+    }
+
+    .input-error {
+        border-color: #dc2626 !important;
+        background-color: #fff5f5;
+    }
+
+        .input-error:focus {
+            box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+        }
+
+    .alert {
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 13px;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
+    label {
+        color:black;
+    }
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+    .btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .auth-card a {
+        color: #4f46e5;
+        text-decoration: none;
+    }
+
+        .auth-card a:hover {
+            text-decoration: underline;
+        }
+</style>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const form = document.getElementById("loginForm");
+        const phone = document.querySelector("input[name='PhoneNumber']");
+        const password = document.querySelector("input[name='Password']");
+        const btn = document.getElementById("loginBtn");
+
+        if (!form) return;
+
+        const phoneRegex = /^(?:\+91|91)?[6-9]\d{9}$/;
+
+        if (phone) {
+            phone.addEventListener("input", function () {
+                phone.classList.toggle("input-error", !phoneRegex.test(phone.value.trim()));
             });
+        }
+
+        if (password) {
+            password.addEventListener("input", function () {
+                password.classList.toggle("input-error", password.value.length < 6);
+            });
+        }
+
+        form.addEventListener("submit", function (e) {
+
+            let valid = true;
+
+            if (phone && !phoneRegex.test(phone.value.trim())) {
+                phone.classList.add("input-error");
+                valid = false;
+            }
+
+            if (password && password.value.length < 6) {
+                password.classList.add("input-error");
+                valid = false;
+            }
+
+            if (!valid) {
+                e.preventDefault();
+                alert("Please fix the errors before submitting.");
+                return;
+            }
+
+            if (btn) {
+                btn.classList.add("loading");
+                btn.innerText = "Signing in...";
+            }
         });
-    </script>
-}
+
+    });
+</script>

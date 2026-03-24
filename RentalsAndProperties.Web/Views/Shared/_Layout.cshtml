@@ -1,17 +1,29 @@
 ﻿@using RentalsAndProperties.Web.Helpers
+
 @{
-    var isAuthenticated = SessionHelper.IsAuthenticated(Context.Session);
-    var fullName = SessionHelper.GetFullName(Context.Session);
-    var roles = SessionHelper.GetRoles(Context.Session);
+    var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
+    var fullName = User?.Identity?.Name ?? "";
+
+    var roles = new List<string>();
+    if (User?.Identity?.IsAuthenticated == true)
+    {
+        roles = User.Claims
+            .Where(c => c.Type == System.Security.Claims.ClaimTypes.Role)
+            .Select(c => c.Value)
+            .ToList();
+    }
+
     var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
-    var isCustomerOnly = isAuthenticated && !isOwnerOrAdmin;
+    var isAdmin = roles.Contains("Admin");
     var initials = string.IsNullOrEmpty(fullName) ? "?" :
-                              string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
-                                                      .Take(2).Select(w => w[0].ToString().ToUpper()));
+        string.Join("", fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries) //["", "", "Shashi", "", "", "Vardhan", "", ""]
+            .Take(2).Select(w => w[0].ToString().ToUpper()));
+
     var welcomeMsg = TempData["WelcomeMessage"]?.ToString();
     var successMsg = TempData["ToastSuccess"]?.ToString();
     var currentPath = Context.Request.Path.ToString();
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -19,20 +31,175 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@(ViewData["Title"] != null ? $"{ViewData["Title"]} – " : "")RentalsAndProperties</title>
     <meta name="description" content="Find your perfect rental property with RentalsAndProperties.">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/property.css" asp-append-version="true">
-    <link rel="stylesheet" href="~/css/media-search.css" asp-append-version="true">
-    @RenderSection("HeadStyles", required: false)
+
+    <style>
+        :root {
+            --bg-main: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --accent-1: #6366f1;
+            --border-subtle: #334155;
+            --radius-md: 10px;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+        }
+
+        /* NAVBAR */
+         .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; @*vertical*@
+            padding: 0.8rem 2rem;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border-subtle);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        } 
+
+        .navbar-brand {
+            font-weight: 700;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            gap: 1rem;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+        }
+
+         .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 500;
+            padding: 0.4rem 0.6rem;
+            border-radius: var(--radius-md);
+            transition: 0.2s;
+        }
+
+           .nav-link:hover {
+                color: var(--text-primary);
+                background: rgba(255,255,255,0.05);
+            }
+
+            .nav-link.active {
+                color: white;
+                background: var(--accent-1);
+            }
+
+        /* BUTTON */
+        .btn-nav-auth {
+            background: var(--accent-1);
+            color: white;
+            padding: 0.5rem 0.9rem;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-weight: 600;
+        }
+
+        .btn-nav-auth:hover {
+            background: #4f46e5;
+        }
+
+        /* PROFILE */
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+        }
+
+        .profile-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--accent-1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .profile-name {
+            font-size: 0.9rem;
+        }
+
+        /* DROPDOWN */
+        .dropdown-menu {
+            position: absolute;
+            right: 0;
+            top: 110%;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            min-width: 180px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 200;
+        }
+
+            .dropdown-menu.show {
+                display: flex;
+            }
+
+        .dropdown-item {
+            padding: 0.6rem 0.8rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            background: none;
+            border: none;
+            text-align: left;
+            cursor: pointer;
+        }
+
+            .dropdown-item:hover {
+                background: rgba(255,255,255,0.05);
+            }
+
+            .dropdown-item.danger {
+                color: #ef4444;
+            }
+
+        .dropdown-divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin: 0.4rem 0;
+        }
+
+        main {
+            padding: 1rem 2rem;
+        } 
+    </style>
+
+    @RenderSection("HeadStyles", required: false) @*if any page contains HeadStyles render it here*@
 </head>
+
 <body data-authenticated="@(isAuthenticated ? "true" : "false")">
 
     @if (!string.IsNullOrEmpty(welcomeMsg))
     {
         <div id="welcomeMessage" data-message="@welcomeMsg" style="display:none;"></div>
     }
+
     @if (!string.IsNullOrEmpty(successMsg))
     {
         <div id="toastSuccess" data-message="@successMsg" style="display:none;"></div>
@@ -40,68 +207,70 @@
 
     <!-- Navbar -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
-        <a href="/" class="navbar-brand" aria-label="RentalsAndProperties Home">
+
+        <a asp-controller="Home" asp-action="Index" class="navbar-brand" aria-label="RentalsAndProperties Home">
+            @*ARIA (Accessible Rich Internet Applications)
+                It tells screen readers:
+
+                “This is what this element means”*@
             🏠 RentalsAndProperties
         </a>
 
-        <ul class="navbar-nav" role="list">
+        <ul class="navbar-nav" role="list"> @*role is an ARIA*@
+
             <li>
-                <a href="/" class="nav-link @(currentPath == "/" ? "active" : "")">Home</a>
+                <a asp-controller="Home" asp-action="Index"
+                   class="nav-link @(currentPath == "/" ? "active" : "")">
+                    Home
+                </a>
             </li>
+
             <li>
-                <a href="/Property/Browse"
+                <a asp-controller="Property" asp-action="Browse"
                    class="nav-link @(currentPath.StartsWith("/Property/Browse") ? "active" : "")">
                     Browse
                 </a>
             </li>
-            
-            
 
             @if (isAuthenticated)
             {
                 <li>
-                    <a href="/Transaction/MyTransactions"
+                    <a asp-controller="Transaction" asp-action="MyTransactions"
                        class="nav-link @(currentPath.StartsWith("/Transaction") ? "active" : "")">
                         My Deals
                     </a>
                 </li>
-                <li>
-                    <a href="/Chat"
-                       class="nav-link @(currentPath.StartsWith("/Chat") ? "active" : "")">
-                        💬 Messages
-                        <span class="chat-unread-badge" style="display:none;background:var(--accent-1);color:#fff;border-radius:50%;width:18px;height:18px;font-size:.65rem;font-weight:700;align-items:center;justify-content:center;margin-left:.3rem;"></span>
-                    </a>
-                </li>
+
                 @if (isOwnerOrAdmin)
                 {
                     <li>
-                        <a href="/Property/Dashboard"
+                        <a asp-controller="Property" asp-action="Dashboard"
                            class="nav-link @(currentPath.StartsWith("/Property/Dashboard") || currentPath.StartsWith("/Property/Create") || currentPath.StartsWith("/Property/Edit") ? "active" : "")">
                             My Listings
                         </a>
                     </li>
                 }
-                @if (roles.Contains("Admin"))
+
+                @if (isAdmin)
                 {
                     <li>
-                        <a href="/Admin"
+                        <a asp-controller="Admin" asp-action="Index"
                            class="nav-link @(currentPath.StartsWith("/Admin") ? "active" : "")"
                            style="color:#f59e0b;">
                             🛡 Property Approvals
                         </a>
                     </li>
-                }
-                @if (roles.Contains("Admin"))
-                {
+
                     <li>
-                        <a href="/Admin/Dashboard"
+                        <a asp-controller="Admin" asp-action="Dashboard"
                            class="nav-link @(currentPath == "/Admin/Dashboard" ? "active" : "")"
                            style="color:#a78bfa;">
                             📊 Analytics
                         </a>
                     </li>
+
                     <li>
-                        <a href="/Admin/Reports"
+                        <a asp-controller="Admin" asp-action="Reports"
                            class="nav-link @(currentPath.StartsWith("/Admin/Reports") ? "active" : "")"
                            style="color:#ef4444;">
                             🚩 Reports
@@ -114,40 +283,58 @@
                     <div class="profile-dropdown" id="profileDropdown">
                         <div class="profile-trigger" role="button" aria-haspopup="true"
                              aria-expanded="false" tabindex="0">
-                            <div class="profile-avatar" aria-hidden="true">@initials</div>
+
+                            <div class="profile-avatar" aria-hidden="true">@initials</div> @*Screen readers can not read aria-hidden*@
                             <span class="profile-name">@fullName</span>
+
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                 @*SVG = Scalable Vector Graphics
+                                  It’s a way to draw graphics using code (not images)*@
                                  stroke="currentColor" stroke-width="2.5" aria-hidden="true">
                                 <polyline points="6 9 12 15 18 9" />
                             </svg>
                         </div>
 
                         <div class="dropdown-menu" role="menu">
-                            <div style="padding:.5rem .75rem;font-size:.82rem;font-weight:600;color:var(--text-primary);">
+
+                            <div style="padding:.5rem .75rem ;font-size:.82rem;font-weight:600;color:var(--text-primary);">
                                 @fullName
                             </div>
+
                             <div style="padding:.1rem .75rem .4rem;font-size:.72rem;color:var(--text-muted);">
                                 @string.Join(", ", roles)
                             </div>
+
                             <div class="dropdown-divider"></div>
+
                             <form asp-action="Logout" asp-controller="Auth" method="post" style="margin:0;">
                                 @Html.AntiForgeryToken()
                                 <button type="submit" class="dropdown-item danger" role="menuitem">
                                     <span>🚪</span> Sign Out
                                 </button>
                             </form>
+
                         </div>
                     </div>
                 </li>
             }
             else
             {
-                <li><a href="/Auth/Login" class="nav-link">Sign In</a></li>
                 <li>
-                    <a href="/Auth/Register" class="btn-nav-auth">
+                    <a asp-controller="Auth" asp-action="Login" class="nav-link">
+                        Sign In
+                    </a>
+                </li>
+
+                <li>
+                    <a asp-controller="Auth" asp-action="Register" class="btn-nav-auth">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
                              stroke="currentColor" stroke-width="2.5">
-                            <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
+                            <path d="M16 21
+                                     v-2
+                                     a4 4 0 00-4-4
+                                     H6a4 4 0 00-4 4
+                                     v2" />
                             <circle cx="9" cy="7" r="4" />
                             <line x1="19" y1="8" x2="19" y2="14" />
                             <line x1="22" y1="11" x2="16" y2="11" />
@@ -156,22 +343,57 @@
                     </a>
                 </li>
             }
+
         </ul>
     </nav>
 
-    <main id="main-content">@RenderBody()</main>
+    <main id="main-content">
+        @RenderBody()
+    </main>
 
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/property.js" asp-append-version="true"></script>
+
     @RenderSection("Scripts", required: false)
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
+            // Toast messages
             const s = document.getElementById('toastSuccess');
-            if (s) { Toast.success(s.dataset.message); s.remove(); }
+            if (s) {
+                Toast.success(s.dataset.message);
+                s.remove();
+            }
+
             const w = document.getElementById('welcomeMessage');
-            if (w) { Toast.success(w.dataset.message); w.remove(); }
+            if (w) {
+                Toast.success(w.dataset.message);
+                w.remove();
+            }
+
+            // Profile dropdown toggle
+            const dropdown = document.getElementById('profileDropdown');
+
+            if (dropdown) {
+                const trigger = dropdown.querySelector('.profile-trigger');
+                const menu = dropdown.querySelector('.dropdown-menu');
+
+                trigger.addEventListener('click', function (e) {
+
+                    e.stopPropagation();
+                    document.querySelectorAll('.dropdown-menu').forEach(m => {
+                        if (m !== menu) m.classList.remove('show');
+                    });
+                    menu.classList.toggle('show');
+                });
+
+                // Close on outside click
+                document.addEventListener('click', function () {
+                    menu.classList.remove('show');
+                });
+            }
+
         });
     </script>
+
 </body>
 </html>

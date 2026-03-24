@@ -1,272 +1,45 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Property.EditPropertyViewModel
-@using RentalsAndProperties.Web.Models
+
 @{
     ViewData["Title"] = "Edit Property";
-    var propertyTypes   = (PropertyTypeWeb[])ViewBag.PropertyTypes;
-    var listingTypes    = (ListingTypeWeb[])ViewBag.ListingTypes;
-    var bhkTypes        = (BHKTypeWeb[])ViewBag.BHKTypes;
-    var furnishingTypes = (FurnishingTypeWeb[])ViewBag.FurnishingTypes;
 }
 
 <div class="form-page">
-    <div class="form-page-header">
-        <div class="form-page-header-inner">
-            <a href="/Property/Dashboard" class="back-link">← My Properties</a>
-            <h1 class="form-page-title">Edit Property</h1>
-            <p class="form-page-subtitle">
-                @Model.Title
-                @if (Model.CurrentStatus == "Rejected")
-                {
-                    <span class="status-pill status-rejected" style="margin-left:.5rem;">
-                        Rejected — editing will re-submit for approval
-                    </span>
-                }
-            </p>
-        </div>
-    </div>
+    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+    <form asp-action="Edit" asp-controller="Property"
+          method="post" enctype="multipart/form-data">
 
-    <div class="form-page-body">
-        <form asp-action="Edit" asp-controller="Property" asp-route-id="@Model.PropertyId"
-              method="post" enctype="multipart/form-data" id="editForm" novalidate>
-            @Html.AntiForgeryToken()
+        @Html.AntiForgeryToken()
 
-            @if (!ViewData.ModelState.IsValid)
+        @Html.HiddenFor(m => m.PropertyId)
+
+        @await Html.PartialAsync("_PropertyFormFields", Model)
+
+        <h3>Existing Images</h3>
+
+        <div class="image-preview-container">
+            @foreach (var img in Model.ExistingImages)
             {
-                <div class="alert alert-error">
-                    <span>⚠</span>
-                    <div>
-                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        { <div>@error.ErrorMessage</div> }
-                    </div>
+                <div class="preview-item">
+                    <img src="@img.ImageUrl" />
+                    <input type="checkbox" name="RemoveImageIds" value="@img.ImageId" /> Remove
                 </div>
             }
+        </div>
 
-            <div class="form-grid">
+        @* New images — Edit only *@
+        <h3>Add New Images</h3>
 
-                <!-- Basic Info -->
-                <div class="form-section">
-                    <h2 class="form-section-title">📋 Basic Information</h2>
-                    <div class="form-group">
-                        <input asp-for="Title" class="form-control has-value" placeholder=" " required />
-                        <label asp-for="Title" class="form-label">Property Title</label>
-                        <span asp-validation-for="Title" class="invalid-feedback"></span>
-                    </div>
-                    <div class="form-group">
-                        <textarea asp-for="Description" class="form-control textarea has-value"
-                                  placeholder=" " required rows="4"></textarea>
-                        <label asp-for="Description" class="form-label">Description</label>
-                        <span asp-validation-for="Description" class="invalid-feedback"></span>
-                    </div>
-                    <div class="form-row-2">
-                        <div class="form-group">
-                            <input asp-for="City" class="form-control has-value" placeholder=" " required />
-                            <label asp-for="City" class="form-label">City</label>
-                        </div>
-                        <div class="form-group">
-                            <input asp-for="Address" class="form-control has-value" placeholder=" " required />
-                            <label asp-for="Address" class="form-label">Full Address</label>
-                        </div>
-                    </div>
-                </div>
+        <div class="form-group">
+            @Html.LabelFor(m => m.Images)
+            <input type="file" name="Images" multiple class="form-control" />
+            @Html.ValidationMessageFor(m => m.Images, "", new { @class = "text-danger" })
+        </div>
 
-                <!-- Pricing -->
-                <div class="form-section">
-                    <h2 class="form-section-title">💰 Pricing</h2>
-                    <div class="form-row-2">
-                        <div class="form-group">
-                            <div class="input-prefix-wrap">
-                                <span class="input-prefix">₹</span>
-                                <input asp-for="Price" class="form-control has-prefix has-value"
-                                       type="number" placeholder=" " required min="1" />
-                                <label asp-for="Price" class="form-label" style="left:2.5rem;">Price</label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="input-prefix-wrap">
-                                <span class="input-prefix">₹</span>
-                                <input asp-for="SecurityDeposit" class="form-control has-prefix has-value"
-                                       type="number" placeholder=" " min="0" />
-                                <label asp-for="SecurityDeposit" class="form-label" style="left:2.5rem;">Security Deposit</label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-row-2">
-                        <div class="form-group">
-                            <select asp-for="ListingType" class="form-control form-select has-value">
-                                @foreach (var lt in listingTypes)
-                                {
-                                    <option value="@((int)lt)" selected="@(Model.ListingType == lt)">@lt</option>
-                                }
-                            </select>
-                            <label asp-for="ListingType" class="form-label form-label-select">Listing Type</label>
-                        </div>
-                        <div class="form-group">
-                            <input asp-for="AvailableFrom" class="form-control has-value" type="date" required />
-                            <label asp-for="AvailableFrom" class="form-label form-label-select">Available From</label>
-                        </div>
-                    </div>
-                </div>
+        <br />
+        <button type="submit" class="btn btn-primary">
+            Update Property
+        </button>
 
-                <!-- Property Details -->
-                <div class="form-section">
-                    <h2 class="form-section-title">🏠 Property Details</h2>
-                    <div class="form-row-3">
-                        <div class="form-group">
-                            <select asp-for="PropertyType" class="form-control form-select has-value">
-                                @foreach (var pt in propertyTypes)
-                                {
-                                    <option value="@((int)pt)" selected="@(Model.PropertyType == pt)">@pt</option>
-                                }
-                            </select>
-                            <label asp-for="PropertyType" class="form-label form-label-select">Property Type</label>
-                        </div>
-                        <div class="form-group">
-                            <select asp-for="BHKType" class="form-control form-select has-value">
-                                @foreach (var bt in bhkTypes)
-                                {
-                                    <option value="@((int)bt)" selected="@(Model.BHKType == bt)">@BHKLabels.Get(bt)</option>
-                                }
-                            </select>
-                            <label asp-for="BHKType" class="form-label form-label-select">BHK Type</label>
-                        </div>
-                        <div class="form-group">
-                            <select asp-for="FurnishingType" class="form-control form-select has-value">
-                                @foreach (var ft in furnishingTypes)
-                                {
-                                    <option value="@((int)ft)" selected="@(Model.FurnishingType == ft)">@ft</option>
-                                }
-                            </select>
-                            <label asp-for="FurnishingType" class="form-label form-label-select">Furnishing</label>
-                        </div>
-                    </div>
-                    <div class="form-row-3">
-                        <div class="form-group">
-                            <input asp-for="Bedrooms" class="form-control has-value" type="number"
-                                   placeholder=" " min="0" max="20" required />
-                            <label asp-for="Bedrooms" class="form-label">Bedrooms</label>
-                        </div>
-                        <div class="form-group">
-                            <input asp-for="Bathrooms" class="form-control has-value" type="number"
-                                   placeholder=" " min="0" max="20" required />
-                            <label asp-for="Bathrooms" class="form-label">Bathrooms</label>
-                        </div>
-                        <div class="form-group">
-                            <input asp-for="SquareFeet" class="form-control has-value" type="number"
-                                   placeholder=" " min="10" required />
-                            <label asp-for="SquareFeet" class="form-label">Area (sq.ft)</label>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Images -->
-                <div class="form-section">
-                    <h2 class="form-section-title">📸 Images</h2>
-
-                    @if (Model.ExistingImages.Count > 0)
-                    {
-                        <p class="form-hint">Current images:</p>
-                        <div class="image-preview-grid">
-                            @foreach (var img in Model.ExistingImages)
-                            {
-                                <div class="preview-item">
-                                    <img src="@img.ImageUrl" alt="Property image" />
-                                    @if (img.IsPrimary)
-                                    {
-                                        <div class="preview-primary-badge">Primary</div>
-                                    }
-                                </div>
-                            }
-                        </div>
-                        <p class="form-hint mt-2">Upload new images to add to existing ones:</p>
-                    }
-                    else
-                    {
-                        <p class="form-hint">No images yet. Upload some below:</p>
-                    }
-
-                    <div class="image-upload-zone" id="uploadZone">
-                        <input type="file" asp-for="Images" id="imageInput"
-                               accept=".jpg,.jpeg,.png,.webp" multiple class="file-input-hidden" />
-                        <label for="imageInput" class="upload-label">
-                            <div class="upload-icon">📁</div>
-                            <div class="upload-text"><strong>Click to add images</strong></div>
-                            <div class="upload-hint">JPG, PNG, WebP · Max 5MB each</div>
-                        </label>
-                    </div>
-                    <div class="image-preview-grid" id="newImagePreview"></div>
-                </div>
-            </div>
-
-            <div class="form-submit-bar">
-                <a href="/Property/Dashboard" class="btn btn-secondary">Cancel</a>
-                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
-                    <span class="btn-text">Save Changes →</span>
-                    <span class="btn-spinner"></span>
-                </button>
-            </div>
-        </form>
-    </div>
+    </form>
 </div>
-
-@section Scripts {
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const input   = document.getElementById('imageInput');
-        const preview = document.getElementById('newImagePreview');
-        const form    = document.getElementById('editForm');
-        const btn     = document.getElementById('submitBtn');
-        let selectedFiles = [];
-
-        input.addEventListener('change', () => {
-            Array.from(input.files).forEach(f => { if (selectedFiles.length < 5) selectedFiles.push(f); });
-            rebuildPreview(); syncFiles();
-        });
-
-        function rebuildPreview() {
-            preview.innerHTML = '';
-            selectedFiles.forEach((file, i) => {
-                const r = new FileReader();
-                r.onload = e => {
-                    const item = document.createElement('div');
-                    item.className = 'preview-item';
-                    item.innerHTML = `<img src="${e.target.result}" />
-                        <button type="button" class="preview-remove" data-i="${i}">&#x2715;</button>`;
-                    item.querySelector('.preview-remove').addEventListener('click', () => {
-                        selectedFiles.splice(i, 1); rebuildPreview(); syncFiles();
-                    });
-                    preview.appendChild(item);
-                };
-                r.readAsDataURL(file);
-            });
-        }
-                function fetchPincode(cityValue) {
-            if (!cityValue) { document.getElementById('pincodeInput').value = ''; return; }
-            fetch(`/api/city/pincode/${cityValue}`)
-                .then(r => r.json())
-                .then(data => {
-                    document.getElementById('pincodeInput').value = data.pincode || '';
-                })
-                .catch(() => {});
-        }
-        // Auto-fill on page load if city already selected (edit mode)
-        document.addEventListener('DOMContentLoaded', function() {
-            const citySelect = document.getElementById('citySelect');
-            if (citySelect?.value) fetchPincode(citySelect.value);
-        });
-
-        function syncFiles() {
-            const dt = new DataTransfer();
-            selectedFiles.forEach(f => dt.items.add(f));
-            input.files = dt.files;
-        }
-
-        form.addEventListener('submit', () => setButtonLoading(btn, true));
-
-        // Floating labels for selects
-        document.querySelectorAll('.form-select, input[type="number"], input[type="date"]').forEach(el => {
-            const update = () => el.classList.toggle('has-value', el.value !== '' && el.value !== '0');
-            el.addEventListener('change', update); update();
-        });
-    });
-    </script>
-}

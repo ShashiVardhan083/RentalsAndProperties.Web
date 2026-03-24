@@ -1,102 +1,221 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Auth.RegisterPhoneViewModel
+
 @{
     ViewData["Title"] = "Create Account";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="auth-page">
-    <div class="hero-orb orb-1" aria-hidden="true"></div>
-    <div class="hero-orb orb-2" aria-hidden="true"></div>
 
-    <div class="auth-card" role="main" aria-labelledby="registerTitle">
+    <div class="auth-card">
 
-        <!-- Progress indicator -->
-        <div class="auth-progress" style="width:33%;" role="progressbar" aria-valuenow="33" aria-valuemin="0" aria-valuemax="100" aria-label="Step 1 of 3"></div>
-
-        <!-- Step indicators -->
-        <div class="step-indicators" aria-label="Registration steps">
-            <div class="step-dot active" title="Step 1: Phone"></div>
-            <div class="step-dot" title="Step 2: Verify OTP"></div>
-            <div class="step-dot" title="Step 3: Profile"></div>
-        </div>
-
-        <!-- Logo + Title -->
-        <div class="auth-logo">
-            <div class="auth-logo-icon" aria-hidden="true">📱</div>
-            <h1 class="auth-title" id="registerTitle">Get Started</h1>
-            <p class="auth-subtitle">Enter your phone number to receive an OTP and create your account</p>
-        </div>
-
-        <!-- Server errors -->
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-error" role="alert">
-                <span aria-hidden="true">⚠</span>
-                <div>
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
-                </div>
-            </div>
-        }
-
-        <form asp-action="Register" asp-controller="Auth" method="post"
-              id="registerForm" novalidate autocomplete="on">
+        <h1>Create Account</h1>
+        <p>Enter your phone number to receive OTP</p>
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+        <form asp-action="Register" asp-controller="Auth" method="post">
 
             @Html.AntiForgeryToken()
 
-            @await Html.PartialAsync("_PhoneInput", Model.PhoneNumber,
-            new ViewDataDictionary(ViewData) {
-                        { "FieldId", "PhoneNumber" },
-                        { "FieldName", "PhoneNumber" },
-                        { "Label", "Mobile Number" },
-                        { "Placeholder", "+91 98765 43210" }
-                        })
+            <div class="form-group">
 
-            <span asp-validation-for="PhoneNumber" class="invalid-feedback"></span>
+                @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
 
-            <div class="alert alert-info" style="margin-top:.5rem;" role="note">
-                <span aria-hidden="true">ℹ</span>
-                <span>A 6-digit OTP will be sent to this number. Standard SMS rates may apply.</span>
+                @Html.TextBoxFor(m => m.PhoneNumber, new
+                {
+                    @class = "form-control",
+                                placeholder = "+91 9876543210",
+                                type = "tel"
+                                })
+
+                @Html.ValidationMessageFor(m => m.PhoneNumber,
+                                "",
+                                new { @class = "text-danger" })
+
             </div>
 
-            <button type="submit" class="btn btn-primary btn-block btn-lg" id="sendOtpBtn">
-                <span class="btn-text">Send OTP →</span>
-                <span class="btn-spinner" aria-hidden="true"></span>
+            <div class="alert alert-info">
+                A 6-digit OTP will be sent to this number.
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Send OTP →
             </button>
+
         </form>
 
-        <div class="auth-footer">
-            Already have an account?
-            <a href="/Auth/Login" class="auth-link">Sign in →</a>
+        <div>
+            <span style="color: darkturquoise">Already have an account?</span>
+            <a href="/Auth/Login">Sign in</a>
         </div>
 
-        <div class="auth-footer" style="margin-top:.5rem;font-size:.78rem;">
-            By continuing, you agree to our
-            <a href="/terms" class="auth-link">Terms of Service</a> and
-            <a href="/privacy" class="auth-link">Privacy Policy</a>
-        </div>
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form   = document.getElementById('registerForm');
-            const btn    = document.getElementById('sendOtpBtn');
 
-            Validator.attachLiveValidation(form);
+<style>
+    
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #eef2ff, #f8fafc);
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-            form.addEventListener('submit', function (e) {
-                const isValid = Validator.validateForm(form);
-                if (!isValid) {
-                    e.preventDefault();
-                    Toast.error('Please enter a valid phone number.');
-                    return;
-                }
-                setButtonLoading(btn, true);
-            });
+    .auth-card {
+        width: 100%;
+        max-width: 420px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+        
+        .auth-card h1 {
+            color: darkcyan;
+            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .auth-card p {
+            margin-bottom: 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+    
+    .form-group {
+        text-align: left;
+        margin-bottom: 18px;
+    }
+
+    .form-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: #333;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        transition: 0.2s ease;
+        font-size: 14px;
+    }
+
+        .form-control:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+        }
+
+    
+    .text-danger {
+        font-size: 12px;
+        color: #dc2626;
+    }
+
+    .alert {
+        padding: 10px 12px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        font-size: 13px;
+    }
+
+
+    .alert-info {
+        background: #e0f2fe;
+        color: #075985;
+    }
+
+    .alert-danger {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+    }
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .btn-primary {
+        background: #4f46e5;
+        color: #fff;
+    }
+
+        .btn-primary:hover {
+            background: #4338ca;
+        }
+
+    .btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .input-error {
+        border: 1px solid #dc2626 !important;
+        background-color: #fff5f5;
+    }
+
+    .input-error:focus {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2);
+    }
+    .auth-card a {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+        .auth-card a:hover {
+            text-decoration: underline;
+        }
+</style>    
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const form = document.querySelector("form");
+        const input = document.querySelector("input[name='PhoneNumber']");
+        const btn = document.querySelector("button[type='submit']");
+
+        input.addEventListener("input", function () {
+            const value = input.value.trim();
+
+            const regex = /^(?:\+91|91)?[6-9]\d{9}$/;
+
+            if (!regex.test(value)) {
+                input.classList.add("input-error");
+            } else {
+                input.classList.remove("input-error");
+            }
         });
-    </script>
-}
+
+        form.addEventListener("submit", function (e) {
+
+            const value = input.value.trim();
+            const regex = /^(?:\+91|91)?[6-9]\d{9}$/;
+
+            if (!regex.test(value)) {
+                e.preventDefault();
+                alert("Please enter a valid phone number");
+                return;
+            }
+
+            btn.classList.add("loading");
+            btn.innerText = "Sending OTP...";
+        });
+
+    });
+</script>

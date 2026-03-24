@@ -4,48 +4,48 @@
    Changes: white-shaded background replacing the ultra-dark theme
    ═══════════════════════════════════════════════════════════════════ */
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500&display=swap');
+/*@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&family=Sora:wght@500;600;700&family=DM+Sans:wght@400;500&display=swap');*/
 
 /* ── CSS Variables ───────────────────────────────────────────────── */
-:root {
+/*:root {*/
     /* Backgrounds — light, airy, white-shaded */
-    --bg-primary: #f8f7ff;
+    /*--bg-primary: #f8f7ff;
     --bg-secondary: #ffffff;
     --bg-card: rgba(255,255,255,0.85);
-    --bg-card-hover: rgba(255,255,255,1);
+    --bg-card-hover: rgba(255,255,255,1);*/
     /* Accent colors — kept exactly from before */
-    --accent-1: #6c63ff;
+    /*--accent-1: #6c63ff;
     --accent-2: #ff6584;
     --accent-3: #43e97b;
-    --accent-4: #f7971e;
+    --accent-4: #f7971e;*/
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, #f0eeff 0%, #fdf0f7 50%, #f8f7ff 100%);
+    /*--gradient-hero: linear-gradient(135deg, #f0eeff 0%, #fdf0f7 50%, #f8f7ff 100%);
     --gradient-card: linear-gradient(135deg, rgba(108,99,255,.08), rgba(255,101,132,.04));
     --gradient-btn: linear-gradient(135deg, #6c63ff, #ff6584);
-    --gradient-text: linear-gradient(135deg, #6c63ff, #ff6584, #f7971e);
+    --gradient-text: linear-gradient(135deg, #6c63ff, #ff6584, #f7971e);*/
     /* Borders */
-    --border-subtle: rgba(108,99,255,0.12);
-    --border-accent: rgba(108,99,255,0.35);
+    /*--border-subtle: rgba(108,99,255,0.12);
+    --border-accent: rgba(108,99,255,0.35);*/
     /* Text — dark on light */
-    --text-primary: #1a1333;
+    /*--text-primary: #1a1333;
     --text-secondary: #4b4568;
-    --text-muted: #9590b0;
+    --text-muted: #9590b0;*/
     /* Shadows */
-    --shadow-glow: 0 0 40px rgba(108,99,255,0.12);
+    /*--shadow-glow: 0 0 40px rgba(108,99,255,0.12);
     --shadow-card: 0 8px 32px rgba(108,99,255,0.10);
-    --shadow-btn: 0 4px 20px rgba(108,99,255,0.30);
+    --shadow-btn: 0 4px 20px rgba(108,99,255,0.30);*/
     /* Radii */
-    --radius-sm: 8px;
+    /*--radius-sm: 8px;
     --radius-md: 14px;
     --radius-lg: 24px;
-    --radius-xl: 32px;
+    --radius-xl: 32px;*/
     /* Easing */
-    --transition: cubic-bezier(0.4, 0, 0.2, 1);
+    /*--transition: cubic-bezier(0.4, 0, 0.2, 1);
     --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-}
+}*/
 
 /* ── Reset & Base ────────────────────────────────────────────────── */
-*, *::before, *::after {
+/**, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -74,20 +74,20 @@ h1, h2, h3, h4, h5, h6 {
 a {
     color: inherit;
     text-decoration: none;
-}
+}*/
 
 /* ── Subtle mesh background overlay ─────────────────────────────── */
-body::before {
+/*body::before {
     content: '';
     position: fixed;
     inset: 0;
     background: radial-gradient(ellipse 80% 60% at 10% -10%, rgba(108,99,255,.07) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 90% 110%, rgba(255,101,132,.06) 0%, transparent 55%), radial-gradient(ellipse 50% 40% at 50% 50%, rgba(67,233,123,.04) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
-}
+}*/
 
 /* ── Navbar ──────────────────────────────────────────────────────── */
-.navbar {
+/*.navbar {
     position: fixed;
     top: 0;
     left: 0;
@@ -140,10 +140,10 @@ body::before {
     .nav-link:hover {
         color: var(--accent-1);
         background: rgba(108,99,255,.07);
-    }
+    }*/
 
 /* Pill button in navbar */
-.btn-nav-auth {
+/*.btn-nav-auth {
     display: inline-flex;
     align-items: center;
     gap: .45rem;
@@ -162,10 +162,10 @@ body::before {
     .btn-nav-auth:hover {
         transform: translateY(-1px) scale(1.02);
         box-shadow: 0 6px 28px rgba(108,99,255,.40);
-    }
+    }*/
 
 /* Profile dropdown */
-.profile-dropdown {
+/*.profile-dropdown {
     position: relative;
 }
 
@@ -264,10 +264,10 @@ body::before {
     height: 1px;
     background: var(--border-subtle);
     margin: .4rem 0;
-}
+}*/
 
 /* ── Hero ────────────────────────────────────────────────────────── */
-.hero {
+/*.hero {
     position: relative;
     min-height: 100vh;
     display: flex;
@@ -277,10 +277,10 @@ body::before {
     padding: 7rem 2rem 4rem;
     overflow: hidden;
     background: var(--gradient-hero);
-}
+}*/
 
 /* Animated gradient orbs — lighter tints */
-.hero-orb {
+/*.hero-orb {
     position: absolute;
     border-radius: 50%;
     filter: blur(90px);
@@ -388,10 +388,10 @@ body::before {
     margin: 0 auto 2.5rem;
     line-height: 1.7;
     animation: fadeSlideUp .8s .2s var(--spring) both;
-}
+}*/
 
 /* Search bar */
-.hero-search {
+/*.hero-search {
     display: flex;
     align-items: stretch;
     max-width: 600px;
@@ -472,10 +472,10 @@ body::before {
     color: var(--text-muted);
     font-weight: 500;
     margin-top: .25rem;
-}
+}*/
 
 /* ── Cards ───────────────────────────────────────────────────────── */
-.section {
+/*.section {
     padding: 5rem 2rem;
     max-width: 1280px;
     margin: 0 auto;
@@ -583,10 +583,10 @@ body::before {
     border-top: 1px solid var(--border-subtle);
     font-size: .8rem;
     color: var(--text-secondary);
-}
+}*/
 
 /* Masked phone */
-.masked-phone {
+/*.masked-phone {
     display: inline-flex;
     align-items: center;
     gap: .4rem;
@@ -622,10 +622,10 @@ body::before {
     .btn-view-details:hover {
         transform: translateY(-2px);
         box-shadow: var(--shadow-btn);
-    }
+    }*/
 
 /* ── Buttons ─────────────────────────────────────────────────────── */
-.btn {
+/*.btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -719,10 +719,10 @@ body::before {
 
 .btn-block {
     width: 100%;
-}
+}*/
 
 /* Loading spinner */
-.btn-loading {
+/*.btn-loading {
     pointer-events: none;
     opacity: .7;
 }
@@ -750,16 +750,16 @@ body::before {
     to {
         transform: rotate(360deg);
     }
-}
+}*/
 
 /* ── Form Elements ───────────────────────────────────────────────── */
-.form-group {
+/*.form-group {
     position: relative;
     margin-bottom: 1.35rem;
-}
+}*/
 
 /* Static label above input — used by partials */
-.form-label-static {
+/*.form-label-static {
     display: block;
     position: static !important;
     transform: none !important;
@@ -802,10 +802,10 @@ body::before {
     .form-control.is-valid {
         border-color: #43e97b;
         box-shadow: 0 0 0 3px rgba(67,233,123,.10);
-    }
+    }*/
 
 /* Floating label (used only where explicitly needed) */
-.form-label {
+/*.form-label {
     position: absolute;
     top: 50%;
     left: 1rem;
@@ -829,10 +829,10 @@ body::before {
 
 .form-control.is-invalid + .form-label {
     color: #ef4444;
-}
+}*/
 
 /* Validation feedback */
-.invalid-feedback {
+/*.invalid-feedback {
     display: none;
     align-items: center;
     gap: .3rem;
@@ -866,15 +866,15 @@ body::before {
     75% {
         transform: translateX(4px);
     }
-}
+}*/
 /* Hide Microsoft Edge password reveal button */
-input[type="password"]::-ms-reveal,
+/*input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {
     display: none;
-}
+}*/
 
 /* Password toggle */
-.form-control-wrapper {
+/*.form-control-wrapper {
     position: relative;
 }
 
@@ -899,10 +899,10 @@ input[type="password"]::-ms-clear {
 
     .toggle-password:hover {
         color: var(--accent-1);
-    }
+    }*/
 
 /* Password strength */
-.strength-bar {
+/*.strength-bar {
     display: flex;
     gap: 4px;
     margin-top: .5rem;
@@ -936,10 +936,10 @@ input[type="password"]::-ms-clear {
     font-size: .72rem;
     margin-top: .3rem;
     font-weight: 600;
-}
+}*/
 
 /* ── OTP Input Grid ───────────────────────────────────────────────── */
-.otp-inputs {
+/*.otp-inputs {
     display: flex;
     gap: .75rem;
     justify-content: center;
@@ -991,10 +991,10 @@ input[type="password"]::-ms-clear {
 .otp-digit.error {
     border-color: #ef4444;
     animation: shake .3s;
-}
+}*/
 
 /* ── Auth Pages ──────────────────────────────────────────────────── */
-.auth-page {
+/*.auth-page {
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -1059,10 +1059,10 @@ input[type="password"]::-ms-clear {
     font-size: .9rem;
     color: var(--text-secondary);
     line-height: 1.5;
-}
+}*/
 
 /* Step indicators */
-.step-indicators {
+/*.step-indicators {
     display: flex;
     justify-content: center;
     gap: .5rem;
@@ -1086,10 +1086,10 @@ input[type="password"]::-ms-clear {
 
     .step-dot.done {
         background: var(--accent-3);
-    }
+    }*/
 
 /* Auth progress */
-.auth-progress {
+/*.auth-progress {
     position: absolute;
     top: 0;
     left: 0;
@@ -1097,10 +1097,10 @@ input[type="password"]::-ms-clear {
     background: var(--gradient-btn);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     transition: width .4s var(--transition);
-}
+}*/
 
 /* Auth footer */
-.auth-footer {
+/*.auth-footer {
     text-align: center;
     margin-top: 1.5rem;
     font-size: .875rem;
@@ -1116,10 +1116,10 @@ input[type="password"]::-ms-clear {
     .auth-link:hover {
         color: #4f46e5;
         text-decoration: underline;
-    }
+    }*/
 
 /* Alerts */
-.alert {
+/*.alert {
     padding: .85rem 1rem;
     border-radius: var(--radius-md);
     font-size: .875rem;
@@ -1146,10 +1146,10 @@ input[type="password"]::-ms-clear {
     background: rgba(108,99,255,.08);
     border: 1px solid rgba(108,99,255,.20);
     color: var(--accent-1);
-}
+}*/
 
 /* Dev OTP hint */
-.dev-otp-hint {
+/*.dev-otp-hint {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1169,10 +1169,10 @@ input[type="password"]::-ms-clear {
     font-size: 1rem;
     color: var(--accent-4);
     letter-spacing: .15em;
-}
+}*/
 
 /* Resend timer */
-.resend-timer {
+/*.resend-timer {
     text-align: center;
     font-size: .85rem;
     color: var(--text-muted);
@@ -1196,10 +1196,10 @@ input[type="password"]::-ms-clear {
     .resend-link:disabled {
         color: var(--text-muted);
         cursor: not-allowed;
-    }
+    }*/
 
 /* Success animation */
-.success-animation {
+/*.success-animation {
     text-align: center;
     padding: 1rem 0;
 }
@@ -1232,10 +1232,10 @@ input[type="password"]::-ms-clear {
         transform: scale(1) rotate(0deg);
         opacity: 1;
     }
-}
+}*/
 
 /* ── Toast Notifications ─────────────────────────────────────────── */
-.toast-container {
+/*.toast-container {
     position: fixed;
     top: 80px;
     right: 1.5rem;
@@ -1295,10 +1295,10 @@ input[type="password"]::-ms-clear {
         opacity: 1;
         transform: translateX(0);
     }
-}
+}*/
 
 /* ── Skeleton Loading ────────────────────────────────────────────── */
-.skeleton {
+/*.skeleton {
     background: linear-gradient( 90deg, rgba(108,99,255,.05) 25%, rgba(108,99,255,.10) 50%, rgba(108,99,255,.05) 75% );
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
@@ -1313,10 +1313,10 @@ input[type="password"]::-ms-clear {
     100% {
         background-position: -200% 0;
     }
-}
+}*/
 
 /* ── Animations ──────────────────────────────────────────────────── */
-@keyframes fadeSlideUp {
+/*@keyframes fadeSlideUp {
     from {
         opacity: 0;
         transform: translateY(24px);
@@ -1354,10 +1354,10 @@ input[type="password"]::-ms-clear {
 
 .fade-in-up-delay-3 {
     animation-delay: .3s;
-}
+}*/
 
 /* ── Utilities ───────────────────────────────────────────────────── */
-.text-gradient {
+/*.text-gradient {
     background: var(--gradient-text);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1434,10 +1434,10 @@ input[type="password"]::-ms-clear {
 
 .w-full {
     width: 100%;
-}
+}*/
 
 /* ── Price prefix fix ────────────────────────────────────────────── */
-.input-prefix-wrap {
+/*.input-prefix-wrap {
     position: relative;
     display: block;
 }
@@ -1462,10 +1462,10 @@ input[type="password"]::-ms-clear {
 
 .input-prefix-wrap > .form-label {
     left: 2rem;
-}
+}*/
 
 /* ── Responsive ──────────────────────────────────────────────────── */
-@media (max-width: 768px) {
+/*@media (max-width: 768px) {
     .navbar {
         padding: 0 1rem;
     }
@@ -1506,4 +1506,4 @@ input[type="password"]::-ms-clear {
     .hero-title {
         font-size: 2rem;
     }
-}
+}*/

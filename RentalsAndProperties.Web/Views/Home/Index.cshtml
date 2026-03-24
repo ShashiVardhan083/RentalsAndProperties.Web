@@ -1,395 +1,321 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Property.PropertyListViewModel
-@using RentalsAndProperties.Web.Helpers
-@using RentalsAndProperties.Web.Models
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success text-center">
-        @TempData["Success"]
-    </div>
-}
+
 @{
     ViewData["Title"] = "Find Your Perfect Home";
-    var isAuthenticated = SessionHelper.IsAuthenticated(Context.Session);
-    var fullName = SessionHelper.GetFullName(Context.Session);
-    var roles = SessionHelper.GetRoles(Context.Session);
-    var isOwnerOrAdmin = roles.Contains("Owner") || roles.Contains("Admin");
-    var isCustomerOnly = isAuthenticated && !isOwnerOrAdmin;
+
+    var isAuthenticated = Model.IsAuthenticated;
+    var fullName = Model.FullName;
+    var roles = Model.Roles;
+
+    var isOwnerOrAdmin = Model.IsOwnerOrAdmin;
+    var isCustomerOnly = Model.IsCustomerOnly;
+
 }
 
-@section HeadStyles {
-    <style>
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
-        }
+<p>@Model.TotalCount+ Listings Available</p>
 
-        .feature-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            transition: transform .3s var(--spring), border-color .3s;
-        }
+<div class="hero-search">
+    <input id="searchInput" type="text" placeholder="Search city..." />
+    <button type="button" class="btn btn-primary" onclick="search()">Search</button>
+</div>
+<div class="section-header">
+    <h2>Featured Properties</h2>
+    <a asp-controller="Property" asp-action="Browse" class="view-all-link">
+        View All →
+    </a>
+</div>
 
-            .feature-card:hover {
-                transform: translateY(-4px);
-                border-color: var(--border-accent);
-            }
-
-        .feature-icon {
-            font-size: 2.2rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: .5rem;
-        }
-
-        .feature-desc {
-            color: var(--text-secondary);
-            font-size: .9rem;
-            line-height: 1.6;
-        }
-
-        .cta-section {
-            padding: 5rem 2rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cta-inner {
-            max-width: 600px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .cta-bg {
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(ellipse at center, rgba(99,102,241,.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
-        .role-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            padding: .35rem .85rem;
-            border-radius: 100px;
-            font-size: .75rem;
-            font-weight: 600;
-            border: 1px solid;
-        }
-
-        .role-admin {
-            background: rgba(239,68,68,.1);
-            border-color: rgba(239,68,68,.3);
-            color: #fca5a5;
-        }
-
-        .role-owner {
-            background: rgba(247,151,30,.1);
-            border-color: rgba(247,151,30,.3);
-            color: #fcd34d;
-        }
-
-        .role-customer {
-            background: rgba(67,233,123,.1);
-            border-color: rgba(67,233,123,.3);
-            color: #6ee7b7;
-        }
-
-        .prop-chips {
-            display: flex;
-            gap: .4rem;
-            flex-wrap: wrap;
-            margin: .5rem 0;
-        }
-
-        .prop-chip {
-            padding: .2rem .6rem;
-            background: rgba(99,102,241,.1);
-            border: 1px solid rgba(99,102,241,.2);
-            border-radius: 100px;
-            font-size: .72rem;
-            font-weight: 600;
-            color: #a78bfa;
-        }
-
-        .badge-rent {
-            background: rgba(67,233,123,.15);
-            border-color: rgba(67,233,123,.3);
-            color: #43e97b;
-        }
-
-        .badge-sale {
-            background: rgba(247,151,30,.15);
-            border-color: rgba(247,151,30,.3);
-            color: #f59e0b;
-        }
-
-        .become-owner-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 1rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-accent);
-            border-radius: var(--radius-lg);
-            padding: 1.75rem 2rem;
-            margin: 1.25rem auto;
-            max-width: 480px;
-        }
-
-        .become-owner-card-icon {
-            font-size: 2.5rem;
-        }
-
-        .become-owner-card-text {
-            font-size: .95rem;
-            color: var(--text-secondary);
-            text-align: center;
-            line-height: 1.6;
-        }
-    </style>
-}
-
-<!-- Hero Section -->
-<section class="hero" aria-labelledby="heroTitle">
-    <div class="hero-orb orb-1" aria-hidden="true"></div>
-    <div class="hero-orb orb-2" aria-hidden="true"></div>
-    <div class="hero-orb orb-3" aria-hidden="true"></div>
-
-    <div style="position:relative;z-index:1;">
-        <div class="hero-badge">🏠 @(Model.TotalCount)+ Verified Listings</div>
-
-        <h1 class="hero-title" id="heroTitle">
-            Find Your Perfect<br>
-            <span class="gradient-text">Dream Property</span>
-        </h1>
-
-        <p class="hero-subtitle">
-            Premium rentals and properties across India.
-            Connect with verified owners. Move in with confidence.
-        </p>
-
-        <div class="hero-search" role="search">
-            <input type="text" class="hero-search-input"
-                   placeholder="Search city, locality, or property type…"
-                   aria-label="Search properties"
-                   id="heroSearch" />
-            <button class="hero-search-btn" type="button"
-                    onclick="window.location.href='/Property/Browse?city='+encodeURIComponent(document.getElementById('heroSearch').value)">
-                Search →
-            </button>
-        </div>
-
-        <div class="hero-stats" role="list">
-            <div class="stat-item" role="listitem">
-                <div class="stat-number">@(Model.TotalCount)+</div>
-                <div class="stat-label">Properties</div>
-            </div>
-            <div class="stat-item" role="listitem">
-                <div class="stat-number">8K+</div>
-                <div class="stat-label">Happy Tenants</div>
-            </div>
-            <div class="stat-item" role="listitem">
-                <div class="stat-number">98%</div>
-                <div class="stat-label">Satisfaction</div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Featured Properties -->
-<section class="section" aria-labelledby="propertiesTitle">
-    <div class="flex items-center justify-between mb-3">
-        <div>
-            <h2 class="section-title" id="propertiesTitle">Featured Properties</h2>
-            <p class="section-subtitle">Latest verified listings</p>
-        </div>
-        <a href="/Property" class="btn btn-secondary btn-sm">View All →</a>
-    </div>
-
-    @if (!Model.Properties.Any())
-    {
-        <div style="text-align:center;padding:3rem;color:var(--text-muted);">
-            <div style="font-size:3rem;margin-bottom:1rem;">🏘️</div>
-            <p>No properties yet — check back soon!</p>
-        </div>
-    }
-    else
-    {
-        <div class="properties-grid" role="list">
-            @foreach (var p in Model.Properties.Take(6))
-            {
-                <article class="property-card" role="listitem">
-                    <div class="property-img"
-                         style="@(!string.IsNullOrEmpty(p.PrimaryImageUrl) ? $"background-image:url('{p.PrimaryImageUrl}');background-size:cover;background-position:center;" : "")">
-                        @if (string.IsNullOrEmpty(p.PrimaryImageUrl))
-                        {
-                            <span aria-hidden="true">🏠</span>
-                        }
-                        <div class="property-badge @(p.ListingType == "Rent" ? "badge-rent" : "badge-sale")">
-                            @p.ListingType
-                        </div>
-                    </div>
-                    <div class="property-body">
-                        <div class="property-price">
-                            ₹@p.Price.ToString("N0")
-                            @if (p.ListingType == "Rent")
-                            {
-                                <span style="font-size:.65rem;font-weight:400;color:var(--text-muted);">/mo</span>
-                            }
-                        </div>
-                        <h3 class="property-title">@p.Title</h3>
-                        <div class="property-location">📍 @p.City</div>
-                        <div class="prop-chips">
-                            <span class="prop-chip">@p.PropertyType</span>
-                            <span class="prop-chip">@p.BHKType</span>
-                        </div>
-                        <div class="property-footer">
-                            @if (isAuthenticated)
-                            {
-                                <a href="/Property/Details/@p.PropertyId" class="btn-view-details">View Details →</a>
-                            }
-                            else
-                            {
-                                <a href="/Auth/Login?returnUrl=/Property/Details/@p.PropertyId"
-                                   class="btn-view-details">🔒 Login to View</a>
-                                <div class="masked-phone" title="Login to reveal"
-                                     onclick="window.location.href='/Auth/Login?returnUrl=/Property/Details/@p.PropertyId'"
-                                     role="button" tabindex="0">
-                                    📞 ••••••
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </article>
-            }
-        </div>
-    }
-</section>
-
-<!-- Features Section -->
-<section class="section" aria-labelledby="featuresTitle">
-    <div class="text-center mb-4">
-        <h2 class="section-title" id="featuresTitle">Why Choose Us</h2>
-        <p class="section-subtitle">Everything you need to find the perfect property</p>
-    </div>
-    <div class="features-grid" role="list">
-        <div class="feature-card fade-in-up" role="listitem">
-            <div class="feature-icon">🔐</div>
-            <h3 class="feature-title">Verified Listings</h3>
-            <p class="feature-desc">Every property is admin-approved before going live. No fake listings.</p>
-        </div>
-        <div class="feature-card fade-in-up fade-in-up-delay-1" role="listitem">
-            <div class="feature-icon">📱</div>
-            <h3 class="feature-title">OTP Authentication</h3>
-            <p class="feature-desc">Secure registration with OTP verification. Your account is always protected.</p>
-        </div>
-        <div class="feature-card fade-in-up fade-in-up-delay-2" role="listitem">
-            <div class="feature-icon">⭐</div>
-            <h3 class="feature-title">Trust Score System</h3>
-            <p class="feature-desc">Owner trust scores help you make confident rental decisions.</p>
-        </div>
-        <div class="feature-card fade-in-up fade-in-up-delay-3" role="listitem">
-            <div class="feature-icon">🚀</div>
-            <h3 class="feature-title">Instant Listing</h3>
-            <p class="feature-desc">Owners list properties in minutes. Approved within 24 hours.</p>
-        </div>
-    </div>
-</section>
-
-<!-- CTA Section -->
-@if (!isAuthenticated)
+@if (!Model.Properties.Any())
 {
-    <!-- Not logged in -->
-    <section class="cta-section" aria-labelledby="ctaTitle">
-        <div class="cta-bg" aria-hidden="true"></div>
-        <div class="cta-inner">
-            <h2 class="section-title mb-2" id="ctaTitle">Ready to Find Your Home?</h2>
-            <p style="color:var(--text-secondary);margin-bottom:2rem;">
-                Join thousands of happy tenants. Register free in 2 minutes.
-            </p>
-            <div class="flex gap-3 justify-center" style="flex-wrap:wrap;">
-                <a href="/Auth/Register" class="btn btn-primary btn-lg">Start for Free →</a>
-                <a href="/Auth/Login" class="btn btn-secondary btn-lg">Sign In</a>
-            </div>
-        </div>
-    </section>
-}
-else if (isCustomerOnly)
-{
-    <!-- Logged in as Customer -->
-    <section class="cta-section" aria-labelledby="ctaTitle">
-        <div class="cta-bg" aria-hidden="true"></div>
-        <div class="cta-inner">
-            <h2 class="section-title mb-2" id="ctaTitle">Welcome, @fullName! 👋</h2>
-            <p style="color:var(--text-secondary);margin-bottom:.75rem;">
-                Your roles:
-                @foreach (var role in roles)
-                {
-                    <span class="role-badge role-@role.ToLower()" style="margin-left:.4rem;">@role</span>
-                }
-            </p>
-            <p style="color:var(--text-secondary);margin-bottom:1rem;">
-                Want to list your own properties?
-            </p>
-
-            <div class="become-owner-card">
-                <div class="become-owner-card-icon">🏡</div>
-                <div class="become-owner-card-text">
-                    <strong>Become an Owner</strong> — it's free and instant.
-                    Start listing properties and connect with tenants today.
-                </div>
-                <form asp-controller="Auth" asp-action="BecomeOwner" method="post">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-primary btn-lg"
-                            onclick="return confirm('Become an Owner and start listing properties?')">
-                        🏡 Become an Owner →
-                    </button>
-                </form>
-            </div>
-
-            <div class="flex gap-3 justify-center mt-3" style="flex-wrap:wrap;">
-                <a href="/Property" class="btn btn-secondary btn-lg">Browse Properties</a>
-            </div>
-        </div>
-    </section>
+    <p style="margin-top:2rem;">No properties available</p>
 }
 else
 {
-    <!-- Logged in as Owner or Admin -->
-    <section class="cta-section" aria-label="User welcome">
-        <div class="cta-bg" aria-hidden="true"></div>
-        <div class="cta-inner">
-            <h2 class="section-title mb-2">Welcome back, @fullName! 👋</h2>
-            <p style="color:var(--text-secondary);margin-bottom:1.5rem;">
-                Your roles:
-                @foreach (var role in roles)
-                {
-                    <span class="role-badge role-@role.ToLower()" style="margin-left:.4rem;">@role</span>
-                }
-            </p>
-            <div class="flex gap-3 justify-center" style="flex-wrap:wrap;">
-                <a href="/Property" class="btn btn-primary btn-lg">Browse Properties →</a>
-                @if (isOwnerOrAdmin)
-                {
-                    <a href="/Property/Create" class="btn btn-secondary btn-lg">➕ Add Property</a>
-                    <a href="/Property/Dashboard" class="btn btn-secondary btn-lg">My Listings</a>
-                }
-                @if (roles.Contains("Admin"))
-                {
-                    <a href="/Admin" class="btn btn-secondary btn-lg">🛡 Admin Panel</a>
-                }
+    <div class="grid">
+        @foreach (var p in Model.Properties)
+        {
+            <div class="card">
+
+                <div class="card-img"
+                     style="@(string.IsNullOrEmpty(p.PrimaryImageUrl)
+                                              ? ""
+                                              : $"background:url('{p.PrimaryImageUrl}') center/cover")">
+
+                    @if (string.IsNullOrEmpty(p.PrimaryImageUrl))
+                    {
+                        <span>🏠</span>
+                    }
+                </div>
+
+                <div class="card-body">
+
+                    <div class="price">
+                        ₹@p.Price.ToString("N0") @*N = Number format, 0 = No decimal places*@
+                        @if (p.ListingType == "Rent")
+                        {
+                            <span style="font-size:0.7rem;">/mo</span>
+                        }
+                    </div>
+
+                    <h4>@p.Title</h4>
+                    <p>📍 @p.City</p>
+
+                    <span class="badge @(p.ListingType == "Rent" ? "rent" : "sale")">
+                        @p.ListingType
+                    </span>
+
+                    <div style="margin-top:10px;">
+                        @if (isAuthenticated)
+                        {
+                            <a asp-controller="Property"
+                               asp-action="Details"
+                               asp-route-id="@p.PropertyId"
+                               class="btn btn-primary">
+                                View Details
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Auth"
+                               asp-action="Login"
+                               asp-route-returnUrl="@($"/Property/Details/{p.PropertyId}")"
+                               class="btn btn-secondary">
+                                Login to View
+                            </a>
+                        }
+                    </div>
+
+                </div>
             </div>
-        </div>
-    </section>
+        }
+    </div>
 }
+@if (!isAuthenticated)
+{
+    <h2>Join & Find Your Home</h2>
+    <a asp-controller="Auth" asp-action="Register" class="btn btn-primary">Register</a>
+    <a asp-controller="Auth" asp-action="Login" class="btn btn-secondary">Login</a>
+}
+else if (isCustomerOnly)
+{
+    <h2>Welcome, @fullName 👋</h2>
+
+    <div class="roles">
+        @foreach (var role in roles)
+        {
+            <span>@role</span>
+        }
+    </div>
+
+    <form asp-controller="Auth" asp-action="BecomeOwner" method="post" style="margin-top:1rem;">
+        @Html.AntiForgeryToken()
+        <button type="submit" class="btn btn-primary">Become Owner</button>
+    </form>
+}
+else
+{
+    <h2>Welcome back, @fullName 👋</h2>
+
+    <div class="roles">
+        @foreach (var role in roles)
+        {
+            <span>@role</span>
+        }
+    </div>
+
+    <div style="margin-top:1rem;">
+        <a asp-controller="Property" asp-action="Create" class="btn btn-primary">Add Property</a>
+        <a asp-controller="Property" asp-action="Dashboard" class="btn btn-secondary">My Listings</a>
+
+        @if (roles.Contains("Admin"))
+        {
+            <a asp-controller="Admin" asp-action="Index" class="btn btn-secondary">Admin Panel</a>
+        }
+    </div>
+}
+
+<style>
+    body {
+        background: #0f172a;
+        color: #e2e8f0;
+        font-family: "Segoe UI", sans-serif;
+    }
+
+    h2 {
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    p {
+        color: #cbd5e1;
+    }
+
+    /* SEARCH */
+    .hero-search {
+        display: flex;
+        gap: 10px;
+        margin: 1.5rem 0;
+        flex-wrap: wrap;
+    }
+
+        .hero-search input {
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+            width: 250px;
+            background: #1e293b;
+            color: white;
+        }
+
+    /* BUTTONS */
+    .btn {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .btn-primary {
+        background: #6366f1;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #4f46e5;
+        }
+
+    .btn-secondary {
+        background: #887fba;
+        color: white;
+        border: 1px solid #334155;
+    }
+
+        .btn-secondary:hover {
+            background: #334155;
+        }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center; 
+    }
+
+    .view-all-link {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #818cf8;
+        text-decoration: none;
+        padding: 0.3rem 0.6rem;
+        border-radius: 6px;
+        transition: 0.2s;
+    }
+
+        .view-all-link:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: #a5b4fc;
+        }
+    /* GRID */
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    /* CARD */
+    .card {
+        background: #1e293b;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: 0.3s;
+    }
+
+        .card:hover {
+            transform: translateY(-4px);
+        }
+
+    .card-img {
+        height: 160px;
+        background: #334155;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .price {
+        font-weight: bold;
+        color: #22c55e;
+        margin-bottom: 0.5rem;
+    }
+
+    .card-body h4 {
+        margin: 0.5rem 0;
+        font-size: 1rem;
+    }
+
+    .card-body p {
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* BADGES */
+    .badge {
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        display: inline-block;
+        margin-top: 4px;
+    }
+
+    .rent {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+    }
+
+    .sale {
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+    }
+
+    /* ROLES */
+    .roles {
+        margin-top: 0.5rem;
+    }
+
+        .roles span {
+            background: #334155;
+            padding: 4px 8px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            margin-right: 5px;
+        }
+
+    /* RESPONSIVE */
+    @@media (max-width: 600px) {
+        .hero-search input
+
+    {
+        width: 100%;
+    }
+
+    }
+</style>
+
+
+<script>
+    function search() {
+        const value = document.getElementById("searchInput").value;
+        window.location.href = "/Property/Browse?city=" + encodeURIComponent(value); //New%20York
+    }
+</script>

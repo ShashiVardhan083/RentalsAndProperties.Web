@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
 using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Models.Dtos;
@@ -33,8 +34,12 @@ namespace RentalsAndProperties.Web.Controllers
             var prop = result.Data;
 
             // Owner cannot transact on their own property
-            var userId = SessionHelper.GetPhone(HttpContext.Session); // not used for check here, done server side
-            var sessionRoles = SessionHelper.GetRoles(HttpContext.Session);
+            var userName = User.Identity?.Name;
+
+            var roles = User.Claims
+                .Where(c => c.Type == ClaimTypes.Role)
+                .Select(c => c.Value)
+                .ToList();
 
             var vm = new TransactionViewModel
             {
@@ -70,8 +75,8 @@ namespace RentalsAndProperties.Web.Controllers
             }
 
             TempData["ToastSuccess"] = vm.PaymentMethod == "Online"
-                ? "🎉 Payment successful! Transaction completed."
-                : "✅ Transaction initiated. Waiting for owner confirmation.";
+                ? " Payment successful! Transaction completed."
+                : " Transaction initiated. Waiting for owner confirmation.";
 
             return RedirectToAction(nameof(MyTransactions));
         }
@@ -111,7 +116,6 @@ namespace RentalsAndProperties.Web.Controllers
                 PropertyCity = t.PropertyCity,
                 OwnerName = t.OwnerName,
 
-                // Derived values (because DTO doesn't contain them)
                 PropertyPrice = t.Amount,
                 TransactionType = t.TransactionType
             }).ToList();
@@ -127,7 +131,7 @@ namespace RentalsAndProperties.Web.Controllers
             var result = await TransactionApi.ConfirmAsync(id);
 
             TempData["ToastSuccess"] = result?.Success == true
-                ? "✅ Confirmed! Transaction updated."
+                ? " Confirmed! Transaction updated."
                 : (result?.Message ?? "Confirmation failed.");
 
             return RedirectToAction(nameof(MyTransactions));

@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
 using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Services;
@@ -57,7 +60,39 @@ namespace RentalsAndProperties.Web.Controllers
                 result.Data.Roles,
                 result.Data.ExpiresAt);
 
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, result.Data.FullName ?? ""),
+                new Claim(ClaimTypes.Email, result.Data.Email ?? ""),
+                new Claim("JwtToken",result.Data.Token)
+            };
+
+            // Add roles
+            if (result.Data.Roles != null)
+            {
+                foreach (var role in result.Data.Roles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
+            }
+            
+
+            // Create identity
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
+            var principal = new ClaimsPrincipal(identity);
+
+            // Sign in with cookie
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal
+            );
             Logger.LogInformation("User logged in: {Phone}", model.PhoneNumber[..^4] + "****");
+
+            TempData["ToastSuccess"] = $"Welcome back, {result.Data.FullName}!";
 
             // Redirect admin to admin dashboard
             if (result.Data.Roles != null && result.Data.Roles.Contains("Admin"))
@@ -92,8 +127,14 @@ namespace RentalsAndProperties.Web.Controllers
 
             if (result == null || !result.Success)
             {
-                ModelState.AddModelError(string.Empty,
-                    result?.Message ?? "Failed to send OTP. Please try again.");
+                var errorMsg =
+                    result?.Errors?.FirstOrDefault()
+                    ?? result?.Message
+                    ?? "Failed to send OTP. Please try again.";
+
+                ModelState.AddModelError(nameof(model.PhoneNumber), errorMsg);
+                ModelState.AddModelError(string.Empty, errorMsg);
+
                 return View(model);
             }
 
@@ -157,6 +198,33 @@ namespace RentalsAndProperties.Web.Controllers
                 result.Data.Roles,
                 result.Data.ExpiresAt);
 
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, result.Data.FullName ?? ""),
+                new Claim(ClaimTypes.Email, result.Data.Email ?? ""),
+                new Claim("JwtToken",result.Data.Token)
+            };
+
+            if (result.Data.Roles != null)
+            {
+                foreach (var role in result.Data.Roles)
+                {
+                    claims.Add(new Claim(ClaimTypes.Role, role));
+                }
+            }
+
+            var identity = new ClaimsIdentity(
+                claims,
+                CookieAuthenticationDefaults.AuthenticationScheme
+            );
+
+            var principal = new ClaimsPrincipal(identity);
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                principal
+            );
+
             TempData["WelcomeMessage"] = $"Welcome, {result.Data.FullName}! Your account has been created.";
             return RedirectToAction("Index", "Home");
         }
@@ -171,6 +239,8 @@ namespace RentalsAndProperties.Web.Controllers
             var token = SessionHelper.GetToken(HttpContext.Session);
             if (!string.IsNullOrEmpty(token))
                 await AuthApi.LogoutAsync(token);
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
 
             SessionHelper.ClearAuthSession(HttpContext.Session);
             HttpContext.Session.Clear();

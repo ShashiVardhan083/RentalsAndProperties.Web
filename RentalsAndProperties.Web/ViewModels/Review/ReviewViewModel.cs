@@ -14,7 +14,7 @@ namespace RentalsAndProperties.Web.ViewModels.Review
         public int Rating { get; set; } = 5;
 
         [Required(ErrorMessage = "Comment is required.")]
-        [StringLength(2000, MinimumLength = 10, ErrorMessage = "Comment must be at least 10 characters.")]
+        [StringLength(50, MinimumLength = 10, ErrorMessage = "Comment must be at least 10 characters.")]
         public string Comment { get; set; } = string.Empty;
 
         [Range(1, 5)]

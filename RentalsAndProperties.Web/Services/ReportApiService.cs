@@ -47,7 +47,7 @@ namespace RentalsAndProperties.Web.Services
 
         public async Task<ApiResponseModel<List<ReportResponseDto>>?> GetMyReportsAsync()
         {
-            var response = await HttpClient.GetAsync("api/reports/my");
+            var response = await HttpClient.GetAsync("api/reports/myReports");
 
             return await ReadAsync<List<ReportResponseDto>>(response);
         }

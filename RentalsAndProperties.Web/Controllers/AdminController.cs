@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
-using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
 using RentalsAndProperties.Web.ViewModels.Admin;
@@ -61,7 +60,13 @@ namespace RentalsAndProperties.Web.Controllers
                 Status = p.Status,
                 OwnerName = p.OwnerName,
                 OwnerPhone = p.OwnerPhone,
-                OwnerTrustScore = p.OwnerTrustScore
+                OwnerTrustScore = p.OwnerTrustScore,
+                Images = p.Images.Select(i => new PropertyImageViewModel
+                {
+                    ImageId = i.ImageId,
+                    ImageUrl = i.ImageUrl,
+                    IsPrimary = i.IsPrimary
+                }).ToList()
             }).ToList();
 
             return View(vm);

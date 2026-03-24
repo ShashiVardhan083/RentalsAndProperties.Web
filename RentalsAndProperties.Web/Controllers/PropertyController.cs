@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using RentalsAndProperties.Web.Filters;
 using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Models.Dtos;
@@ -13,7 +14,6 @@ namespace RentalsAndProperties.Web.Controllers
     public class PropertyController : Controller
     {
         private readonly PropertyApiService PropertyApi;
-        private readonly PropertyMediaApiService MediaApi;
         private readonly PropertySearchApiService SearchApi;
         private readonly ILogger<PropertyController> Logger;
         private readonly ReviewApiService ReviewApi;
@@ -22,14 +22,12 @@ namespace RentalsAndProperties.Web.Controllers
         public PropertyController(
             LocationApiService locationApi,
             PropertyApiService propertyApi,
-            PropertyMediaApiService mediaApi,
             PropertySearchApiService searchApi,
             ReviewApiService reviewApi,
             ILogger<PropertyController> logger)
         {
             LocationApi = locationApi;
             PropertyApi = propertyApi;
-            MediaApi = mediaApi;
             SearchApi = searchApi;
             ReviewApi = reviewApi;
             Logger = logger;
@@ -42,86 +40,109 @@ namespace RentalsAndProperties.Web.Controllers
             return Json(new { pincode });
         }
 
-        // Public: Approved Listings
-
-        [HttpGet]
-        public async Task<IActionResult> Index([FromQuery] int page = 1)
-        {
-            var result = await PropertyApi.GetApprovedAsync(page, 12);
-
-            if (result?.Data == null)
-            {
-                ViewBag.Error = result?.Message ?? "Failed to load properties.";
-                return View(new PropertyListViewModel());
-            }
-
-            var vm = new PropertyListViewModel
-            {
-                CurrentPage = result.Data.Page,
-                TotalPages = result.Data.TotalPages,
-                TotalCount = result.Data.TotalCount,
-                Properties = result.Data.Items.Select(p => new PropertyCardViewModel
-                {
-                    PropertyId = p.PropertyId,
-                    Title = p.Title,
-                    City = p.City,
-                    Price = p.Price,
-                    ListingType = p.ListingType,
-                    PropertyType = p.PropertyType,
-                    BHKType = p.BHKType,
-                    PrimaryImageUrl = p.PrimaryImageUrl
-                }).ToList()
-            };
-
-            return View(vm);
-        }
 
         // Search & Filter 
 
         [HttpGet]
-        public async Task<IActionResult> Browse([FromQuery] PropertySearchQueryDto query)
+        public async Task<IActionResult> Browse([FromQuery] PropertySearchQueryDto queryDto)
         {
+            // Get cities
             var citiesResult = await SearchApi.GetCitiesAsync();
-            ViewBag.Cities = citiesResult?.Data ?? new List<string>();
+            var cities = citiesResult?.Data ?? new List<string>();
 
-            var result = await SearchApi.SearchAsync(query);
+            // Call search API
+            var result = await SearchApi.SearchAsync(queryDto);
 
-            ViewBag.IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session);
-            ViewBag.Query = query;
+            var queryVm = new PropertySearchQueryViewModel
+            {
+                City = queryDto.City,
+                ListingType = queryDto.ListingType,
+                PropertyType = queryDto.PropertyType,
+                BHKType = queryDto.BHKType,
+                MinPrice = queryDto.MinPrice,
+                MaxPrice = queryDto.MaxPrice,
+                Page = queryDto.Page,
+                SortBy = queryDto.SortBy
+            };
 
+            // Handle error / empty response
             if (result?.Data == null)
             {
-                ViewBag.Error = result?.Message ?? "Search failed.";
-                return View(new PropertySearchResultViewModel());
+                return View(new PropertySearchResultViewModel
+                {
+                    Properties = new List<PropertyCardViewModel>(),
+                    TotalCount = 0,
+                    CurrentPage = 1,
+                    TotalPages = 1,
+
+                    Query = queryVm,
+                    IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session)
+                });
             }
+
+            // Map Properties
+            var properties = result.Data.Properties.Select(p => new PropertyCardViewModel
+            {
+                PropertyId = p.PropertyId,
+                Title = p.Title,
+                City = p.City,
+                Price = p.Price,
+                ListingType = p.ListingType,
+                PropertyType = p.PropertyType,
+                BHKType = p.BHKType,
+                FurnishingType = p.FurnishingType,
+                Bedrooms = p.Bedrooms,
+                Bathrooms = p.Bathrooms,
+                SquareFeet = p.SquareFeet,
+                OwnerName = p.OwnerName,
+                OwnerTrustScore = p.OwnerTrustScore,
+                PrimaryImageUrl = p.PrimaryImageUrl,
+                ImageUrls = p.ImageUrls,
+                AverageRating = p.AverageRating,
+                ReviewCount = p.ReviewCount
+            }).ToList();
 
             var vm = new PropertySearchResultViewModel
             {
+                Properties = properties,
                 TotalCount = result.Data.TotalCount,
                 CurrentPage = result.Data.CurrentPage,
                 TotalPages = result.Data.TotalPages,
 
-                Properties = result.Data.Properties.Select(p => new PropertyCardViewModel
-                {
-                    PropertyId = p.PropertyId,
-                    Title = p.Title,
-                    City = p.City,
-                    Price = p.Price,
-                    ListingType = p.ListingType,
-                    PropertyType = p.PropertyType,
-                    BHKType = p.BHKType,
-                    FurnishingType = p.FurnishingType,
-                    Bedrooms = p.Bedrooms,
-                    Bathrooms = p.Bathrooms,
-                    SquareFeet = p.SquareFeet,
-                    OwnerName = p.OwnerName,
-                    OwnerTrustScore = p.OwnerTrustScore,
-                    PrimaryImageUrl = p.PrimaryImageUrl,
-                    ImageUrls = p.ImageUrls,
-                    AverageRating = p.AverageRating,
-                    ReviewCount = p.ReviewCount
-                }).ToList()
+                Query = queryVm,
+                IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session)
             };
+
+            vm.Cities = CityDetailsEnum.Data
+                .Select(c => new SelectListItem
+                {
+                    Value = c.Key.ToString(),
+                    Text = c.Value
+                }).ToList();
+
+            vm.ListingTypes = Enum.GetValues(typeof(ListingTypeEnum))
+                .Cast<ListingTypeEnum>()
+                .Select(x => new SelectListItem
+                {
+                    Value = x.ToString(),
+                    Text = x.ToString()
+                }).ToList();
+
+            vm.BhkTypes = Enum.GetValues(typeof(BhkTypeEnum))
+                .Cast<BhkTypeEnum>()
+                .Select(x => new SelectListItem
+                {
+                    Value = x.ToString(),
+                    Text = BhkLabelsEnum.Get(x)
+                }).ToList();
+
+            vm.FurnishingTypes = Enum.GetValues(typeof(FurnishingTypeEnum))
+                .Cast<FurnishingTypeEnum>()
+                .Select(x => new SelectListItem
+                {
+                    Value = x.ToString(),
+                    Text = x.ToString()
+                }).ToList();
 
             return View(vm);
         }
@@ -194,18 +215,6 @@ namespace RentalsAndProperties.Web.Controllers
                 return View(new List<PropertyCardViewModel>());
             }
 
-            /*    var vm = result.Data.Select(p => new PropertyCardViewModel
-                {
-                    PropertyId = p.PropertyId,
-                    Title = p.Title,
-                    City = p.City,
-                    Price = p.Price,
-                    ListingType = p.ListingType,
-                    PropertyType = p.PropertyType,
-                    BHKType = p.BHKType,
-                    PrimaryImageUrl = p.PrimaryImageUrl
-                }).ToList();
-            */
             var vm = result.Data.Select(p => new PropertyCardViewModel
             {
                 PropertyId = p.PropertyId,
@@ -216,9 +225,8 @@ namespace RentalsAndProperties.Web.Controllers
                 PropertyType = p.PropertyType,
                 BHKType = p.BHKType,
                 PrimaryImageUrl = p.PrimaryImageUrl,
-                //  Add this line:
                 ImageUrls = p.ImageUrls ?? new List<string>(),
-                Status = p.Status,           // ✅ Also add Status so status pills work
+                Status = p.Status,  
                 CreatedAt = p.CreatedAt,
             }).ToList();
 
@@ -309,7 +317,7 @@ namespace RentalsAndProperties.Web.Controllers
                 PropertyId = detail.PropertyId,
                 Title = detail.Title,
                 Description = detail.Description,
-                City = Enum.TryParse<CityWeb>(detail.City, true, out var city) ? city : CityWeb.Hyderabad,
+                City = Enum.TryParse<CityEnum>(detail.City, true, out var city) ? city : CityEnum.Hyderabad,
                 Address = detail.Address,
                 Price = detail.Price,
                 SecurityDeposit = detail.SecurityDeposit,
@@ -318,7 +326,7 @@ namespace RentalsAndProperties.Web.Controllers
                 Bathrooms = detail.Bathrooms,
                 AvailableFrom = detail.AvailableFrom,
                 CurrentStatus = detail.Status,
-                ExistingImages = detail.Images.Select(i => new PropertyImageDto
+                ExistingImages = detail.Images.Select(i => new PropertyImageViewModel
                 {
                     ImageId = i.ImageId,
                     ImageUrl = i.ImageUrl,
@@ -326,28 +334,28 @@ namespace RentalsAndProperties.Web.Controllers
                 }).ToList()
             };
 
-            if (Enum.TryParse<PropertyTypeWeb>(detail.PropertyType, true, out var pt))
+            if (Enum.TryParse<PropertyTypeEnum>(detail.PropertyType, true, out var pt))
                 model.PropertyType = pt;
-            if (Enum.TryParse<ListingTypeWeb>(detail.ListingType, true, out var lt))
+            if (Enum.TryParse<ListingTypeEnum>(detail.ListingType, true, out var lt))
                 model.ListingType = lt;
-            if (Enum.TryParse<FurnishingTypeWeb>(detail.FurnishingType, true, out var ft))
+            if (Enum.TryParse<FurnishingTypeEnum>(detail.FurnishingType, true, out var ft))
                 model.FurnishingType = ft;
 
-            var cityMatch = Enum.GetValues<CityWeb>()
-                .FirstOrDefault(c => CityDetails.GetName(c)
+            var cityMatch = Enum.GetValues<CityEnum>()
+                .FirstOrDefault(c => CityDetailsEnum.GetName(c)
                     .Equals(detail.City, StringComparison.OrdinalIgnoreCase));
             model.City = cityMatch;
             model.Pincode = detail.Pincode ?? "";
 
             model.BHKType = detail.BHKType switch
             {
-                "1 RK" => BHKTypeWeb.OneRK,
-                "1 BHK" => BHKTypeWeb.OneBHK,
-                "2 BHK" => BHKTypeWeb.TwoBHK,
-                "3 BHK" => BHKTypeWeb.ThreeBHK,
-                "4 BHK" => BHKTypeWeb.FourBHK,
-                "Penthouse" => BHKTypeWeb.Penthouse,
-                _ => BHKTypeWeb.OneBHK
+                "1 RK" => BhkTypeEnum.OneRK,
+                "1 BHK" => BhkTypeEnum.OneBHK,
+                "2 BHK" => BhkTypeEnum.TwoBHK,
+                "3 BHK" => BhkTypeEnum.ThreeBHK,
+                "4 BHK" => BhkTypeEnum.FourBHK,
+                "Penthouse" => BhkTypeEnum.Penthouse,
+                _ => BhkTypeEnum.OneBHK
             };
 
             SetEnumViewBags();
@@ -362,12 +370,12 @@ namespace RentalsAndProperties.Web.Controllers
             if (!ModelState.IsValid)
             {
                 var detail = await PropertyApi.GetDetailsAsync(id);
-                model.ExistingImages = detail?.Data?.Images.Select(i => new PropertyImageDto
+                model.ExistingImages = detail?.Data?.Images.Select(i => new PropertyImageViewModel
                 {
                     ImageId = i.ImageId,
                     ImageUrl = i.ImageUrl,
                     IsPrimary = i.IsPrimary,
-                }).ToList() ?? new List<PropertyImageDto>();
+                }).ToList() ?? new List<PropertyImageViewModel>();
 
                 SetEnumViewBags();
                 return View(model);
@@ -385,113 +393,6 @@ namespace RentalsAndProperties.Web.Controllers
             TempData["Success"] = "Property updated successfully.";
             return RedirectToAction(nameof(Dashboard));
         }
-
-        //  Upload Images (GET) 
-
-        [HttpGet]
-        [JwtAuthorize("Owner", "Admin")]
-        public async Task<IActionResult> UploadImages(Guid id)
-        {
-            var detail = await PropertyApi.GetDetailsAsync(id);
-
-            if (detail == null || !detail.Success || detail.Data == null)
-            {
-                TempData["Error"] = "Property not found.";
-                return RedirectToAction(nameof(Dashboard));
-            }
-
-            var vm = new UploadImagesViewModel
-            {
-                PropertyId = id,
-                PropertyTitle = detail.Data.Title,
-                ExistingImages = detail.Data.Images.Select(i => new PropertyImageDto
-                {
-                    ImageId = i.ImageId,
-                    ImageUrl = i.ImageUrl,
-                    IsPrimary = i.IsPrimary
-                }).ToList()
-            };
-
-            return View(vm);
-        }
-
-        // Upload Images (POST) 
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [JwtAuthorize("Owner", "Admin")]
-        public async Task<IActionResult> UploadImages(Guid id, UploadImagesViewModel model)
-        {
-            // Validate: files must be selected
-            if (model.Images == null || model.Images.Count == 0)
-            {
-                TempData["Error"] = "Please select at least one image to upload.";
-                return RedirectToAction(nameof(UploadImages), new { id });
-            }
-
-            // Client-side validation before sending to API
-            var invalidFiles = model.Images.Where(f =>
-                f.Length == 0 ||
-                f.Length > 5 * 1024 * 1024 ||
-                !new[] { ".jpg", ".jpeg", ".png", ".webp" }
-                    .Contains(Path.GetExtension(f.FileName).ToLower())).ToList();
-
-            if (invalidFiles.Any())
-            {
-                TempData["Error"] = "One or more files are invalid. Max 5MB each. Allowed: JPG, PNG, WebP.";
-                return RedirectToAction(nameof(UploadImages), new { id });
-            }
-
-            var result = await MediaApi.UploadImagesAsync(id, model.Images);
-
-            if (result == null || !result.Success)
-            {
-                TempData["Error"] = result?.Message ?? "Upload failed. Please try again.";
-                return RedirectToAction(nameof(UploadImages), new { id });
-            }
-
-            TempData["Success"] = $"{result.Data?.Count ?? 0} image(s) uploaded successfully.";
-            return RedirectToAction(nameof(UploadImages), new { id });
-        }
-
-        // Delete Image 
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [JwtAuthorize("Owner", "Admin")]
-        public async Task<IActionResult> DeleteImage(Guid imageId, Guid propertyId)
-        {
-            var result = await MediaApi.DeleteImageAsync(imageId);
-
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Success == true
-                    ? "Image deleted successfully."
-                    : (result?.Message ?? "Delete failed.");
-
-            return RedirectToAction(nameof(UploadImages), new { id = propertyId });
-        }
-
-        // Set Primary Image 
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [JwtAuthorize("Owner", "Admin")]
-        public async Task<IActionResult> SetPrimaryImage(Guid imageId, Guid propertyId)
-        {
-            var result = await MediaApi.SetPrimaryAsync(imageId);
-
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                return Json(new { success = result?.Success ?? false, message = result?.Message });
-
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Success == true
-                    ? "Primary image updated."
-                    : (result?.Message ?? "Failed to set primary image.");
-
-            return RedirectToAction(nameof(UploadImages), new { id = propertyId });
-        }
-
-        //  Delete Property 
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -512,12 +413,12 @@ namespace RentalsAndProperties.Web.Controllers
 
         private void SetEnumViewBags()
         {
-            ViewBag.PropertyTypes = Enum.GetValues<PropertyTypeWeb>();
-            ViewBag.ListingTypes = Enum.GetValues<ListingTypeWeb>();
-            ViewBag.BHKTypes = Enum.GetValues<BHKTypeWeb>();
-            ViewBag.FurnishingTypes = Enum.GetValues<FurnishingTypeWeb>();
-            ViewBag.Cities = Enum.GetValues<CityWeb>()
-                .Select(c => new { Value = c.ToString(), Name = CityDetails.GetName(c) })
+            ViewBag.PropertyTypes = Enum.GetValues<PropertyTypeEnum>();
+            ViewBag.ListingTypes = Enum.GetValues<ListingTypeEnum>();
+            ViewBag.BHKTypes = Enum.GetValues<BhkTypeEnum>();
+            ViewBag.FurnishingTypes = Enum.GetValues<FurnishingTypeEnum>();
+            ViewBag.Cities = Enum.GetValues<CityEnum>()
+                .Select(c => new { Value = c.ToString(), Name = CityDetailsEnum.GetName(c) })
                 .ToList();
         }
     }

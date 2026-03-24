@@ -1,6 +1,6 @@
 ﻿namespace RentalsAndProperties.Web.Models.Enums
 {
-    public enum FurnishingTypeWeb
+    public enum FurnishingTypeEnum
     {
         Unfurnished = 1,
         SemiFurnished = 2,

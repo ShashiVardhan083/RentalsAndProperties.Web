@@ -1,291 +1,276 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Auth.OtpVerifyViewModel
+
 @{
-    ViewData["Title"] = "Verify & Complete Profile";
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var devOtp = ViewBag.DevOtp?.ToString();
+    ViewData["Title"] = "Verify OTP & Complete Registration";
 }
 
 <div class="auth-page">
-    <div class="hero-orb orb-1" aria-hidden="true"></div>
-    <div class="hero-orb orb-2" aria-hidden="true"></div>
 
-    <div class="auth-card" style="max-width:500px;" role="main" aria-labelledby="verifyTitle">
+    <div class="auth-card">
 
-        <!-- Progress bar -->
-        <div class="auth-progress" id="authProgress" style="width:66%;"
-             role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Step 2 of 3"></div>
-
-        <!-- Step dots -->
-        <div class="step-indicators" aria-label="Registration steps">
-            <div class="step-dot done" title="Step 1: Phone ✓"></div>
-            <div class="step-dot active" id="stepDot2" title="Step 2: Verify OTP"></div>
-            <div class="step-dot" id="stepDot3" title="Step 3: Profile"></div>
-        </div>
-
-        <!-- Title -->
-        <div class="auth-logo">
-            <div class="auth-logo-icon" id="stepIcon" aria-hidden="true">🔐</div>
-            <h1 class="auth-title" id="verifyTitle">Verify Your Number</h1>
-            <p class="auth-subtitle" id="verifySubtitle">
-                We sent a 6-digit OTP to
-                <strong>@Model.PhoneNumber</strong>
-            </p>
-        </div>
-
-        <!-- Dev OTP Hint (remove in production) -->
-        @if (!string.IsNullOrEmpty(devOtp))
+        <h1>Verify OTP</h1>
+        <p>Enter the OTP and complete your profile</p>
+        @if (ViewBag.DevOtp != null)
         {
-            <div class="dev-otp-hint" role="note" aria-label="Development mode OTP hint">
-                <span>🧪 Dev Mode OTP:</span>
-                <span class="dev-otp-code" title="Click to auto-fill" tabindex="0" role="button"
-                      aria-label="Click to auto-fill OTP @devOtp">@devOtp</span>
+            <div class="alert alert-info" style="color:black">
+                <strong>Dev OTP:</strong> @ViewBag.DevOtp
             </div>
         }
+        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
 
-        <!-- Server errors -->
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-error" role="alert" id="serverErrors">
-                <span aria-hidden="true">⚠</span>
-                <div>
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
-                </div>
-            </div>
-        }
-
-        <form asp-action="VerifyOtp" asp-controller="Auth" method="post"
-              id="verifyForm" novalidate autocomplete="off">
+        <form asp-action="VerifyOtp" asp-controller="Auth" method="post">
 
             @Html.AntiForgeryToken()
-
-            <!-- Hidden phone -->
-            <input type="hidden" asp-for="PhoneNumber" />
-
-            <!-- ══ STEP 2: OTP ══════════════════════════════════ -->
-            <div id="stepOtp">
-
-                <!-- OTP digit inputs -->
-                <div class="otp-inputs" id="otpInputs" role="group" aria-label="Enter 6-digit OTP">
-                    @for (int i = 1; i <= 6; i++)
-                    {
-                        <input type="text"
-                               class="otp-digit"
-                               maxlength="1"
-                               inputmode="numeric"
-                               pattern="\d"
-                               autocomplete="one-time-code"
-                               aria-label="OTP digit @i" />
-                    }
-                </div>
-
-                <!-- Hidden aggregated OTP field -->
-                <input type="hidden" asp-for="OtpCode" id="OtpCode" />
-                <span asp-validation-for="OtpCode" class="invalid-feedback text-center" id="otpError" style="display:block;text-align:center;margin-bottom:.5rem;"></span>
-
-                <button type="button" class="btn btn-primary btn-block btn-lg" id="verifyOtpBtn">
-                    <span class="btn-text">Verify OTP →</span>
-                    <span class="btn-spinner" aria-hidden="true"></span>
-                </button>
-
-                <!-- Resend timer -->
-                <div class="resend-timer" role="status" aria-live="polite">
-                    Resend OTP in <span id="timerCount">60</span>s
-                </div>
+            <div class="form-group">
+                @Html.LabelFor(m => m.PhoneNumber)
+                @Html.TextBoxFor(m => m.PhoneNumber, new {
+                @class = "form-control",
+                                @readonly = "readonly"
+                                })
             </div>
 
-            <!-- ══ STEP 3: Profile ════════════════════════════════ -->
-            <div id="stepProfile" style="display:none;">
+            <div class="form-group">
+                @Html.LabelFor(m => m.OtpCode)
 
-                <!-- Full Name -->
-                <div class="form-group">
-                    <label for="FullName" class="form-label">Full Name</label>
-                    <input type="text"
-                           asp-for="FullName"
-                           id="FullName"
-                           class="form-control"
-                           placeholder=" "
-                           autocomplete="name"
-                           required
-                           data-required="true"
-                           data-required-msg="Full name is required." />
-                    
-                    <span asp-validation-for="FullName" class="invalid-feedback"></span>
-                </div>
-
-                <!-- Email (optional) -->
-                <div class="form-group">
-                    <label for="Email" class="form-label">Email (optional)</label>
-                    <input type="email"
-                           asp-for="Email"
-                           id="Email"
-                           class="form-control"
-                           placeholder=" "
-                           autocomplete="email"
-                           inputmode="email" />
-                    
-                    <span asp-validation-for="Email" class="invalid-feedback"></span>
-                </div>
-
-                <!-- Password (partial with strength meter) -->
-                @await Html.PartialAsync("_PasswordInput", (object)null!,
-                new ViewDataDictionary(ViewData) {
-                                { "FieldId", "Password" },
-                                { "FieldName", "Password" },
-                                { "Label", "Create Password" },
-                                { "ShowStrength", true }
+                @Html.TextBoxFor(m => m.OtpCode, new {
+                                @class = "form-control",
+                                maxlength = "6",
+                                placeholder = "Enter 6-digit OTP"
                                 })
-                <span asp-validation-for="Password" class="invalid-feedback"></span>
 
-                <!-- Confirm Password -->
-                @await Html.PartialAsync("_PasswordInput", (object)null!,
-                                new ViewDataDictionary(ViewData) {
-                                { "FieldId", "ConfirmPassword" },
-                                { "FieldName", "ConfirmPassword" },
-                                { "Label", "Confirm Password" },
-                                { "ShowStrength", false }
-                                })
-                <span asp-validation-for="ConfirmPassword" class="invalid-feedback"></span>
-
-                <button type="submit" class="btn btn-primary btn-block btn-lg" id="completeBtn">
-                    <span class="btn-text">🎉 Create My Account</span>
-                    <span class="btn-spinner" aria-hidden="true"></span>
-                </button>
-
-                <button type="button" class="btn btn-ghost btn-block mt-1" id="backToOtpBtn">
-                    ← Back
-                </button>
+                @Html.ValidationMessageFor(m => m.OtpCode, "", new { @class = "text-danger" })
             </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.FullName)
+
+                @Html.TextBoxFor(m => m.FullName, new {
+                                @class = "form-control",
+                                placeholder = "Enter your full name"
+                                })
+
+                @Html.ValidationMessageFor(m => m.FullName, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.Email)
+
+                @Html.TextBoxFor(m => m.Email, new {
+                                @class = "form-control",
+                                type = "email",
+                                placeholder = "Enter your email (optional)"
+                                })
+
+                @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.Password)
+
+                @Html.PasswordFor(m => m.Password, new {
+                                @class = "form-control",
+                                placeholder = "Enter password"
+                                })
+
+                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger" })
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.ConfirmPassword)
+
+                @Html.PasswordFor(m => m.ConfirmPassword, new {
+                                @class = "form-control",
+                                placeholder = "Confirm password"
+                                })
+
+                @Html.ValidationMessageFor(m => m.ConfirmPassword, "", new { @class = "text-danger" })
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Verify & Create Account →
+            </button>
 
         </form>
+
+        <div style="margin-top:10px;">
+            <a href="/Auth/Register">← Change Phone Number</a>
+        </div>
 
     </div>
 </div>
 
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
 
-            // ── OTP Input ────────────────────────────────────────────────
-            const otpControl = initOtpInputs('#otpInputs', 'OtpCode');
-            startResendTimer('#resendOtpBtn', '#timerCount', 60);
+<style>
+    
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #eef2ff, #f8fafc);
+        padding: 20px;
+        font-family: 'Segoe UI', sans-serif;
+    }
 
-            // ── Step management ──────────────────────────────────────────
-            let currentStep = 'otp'; // 'otp' | 'profile'
+    .auth-card {
+        width: 100%;
+        max-width: 450px;
+        background: #fff;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
 
-            const stepOtp     = document.getElementById('stepOtp');
-            const stepProfile = document.getElementById('stepProfile');
-            const progress    = document.getElementById('authProgress');
-            const titleEl     = document.getElementById('verifyTitle');
-            const subtitleEl  = document.getElementById('verifySubtitle');
-            const iconEl      = document.getElementById('stepIcon');
-            const dot2        = document.getElementById('stepDot2');
-            const dot3        = document.getElementById('stepDot3');
+        .auth-card h1 {
+            margin-bottom: 6px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #111827;
+        }
 
-            function goToProfile() {
-                currentStep = 'profile';
-                stepOtp.style.display = 'none';
-                stepProfile.style.display = 'block';
+        .auth-card p {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #6b7280;
+        }
 
-                progress.style.width = '100%';
-                progress.setAttribute('aria-valuenow', '100');
-                titleEl.textContent    = 'Complete Your Profile';
-                subtitleEl.textContent = 'Almost there! Just a few more details.';
-                iconEl.textContent     = '👤';
+    .form-group {
+        margin-bottom: 16px;
+    }
 
-                dot2.classList.remove('active');
-                dot2.classList.add('done');
-                dot3.classList.add('active');
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        transition: 0.2s;
+    }
 
-                Validator.attachLiveValidation(stepProfile);
-                initPasswordToggles();
-                document.getElementById('FullName')?.focus();
-            }
+        .form-control:focus {
+            border-color: #4f46e5;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(79,70,229,0.15);
+        }
 
-            function goToOtp() {
-                currentStep = 'otp';
-                stepOtp.style.display = 'block';
-                stepProfile.style.display = 'none';
+    .input-error {
+        border-color: #dc2626 !important;
+        background: #fff5f5;
+    }
 
-                progress.style.width = '66%';
-                progress.setAttribute('aria-valuenow', '66');
-                titleEl.textContent    = 'Verify Your Number';
-                subtitleEl.innerHTML   = 'Enter the OTP sent to <strong>@Model.PhoneNumber</strong>';
-                iconEl.textContent     = '🔐';
+    .text-danger {
+        font-size: 12px;
+        color: #dc2626;
+    }
 
-                dot2.classList.remove('done');
-                dot2.classList.add('active');
-                dot3.classList.remove('active', 'done');
-            }
+    .btn {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
 
-            // ── Verify OTP button ────────────────────────────────────────
-            document.getElementById('verifyOtpBtn')?.addEventListener('click', function () {
-                const otp = document.getElementById('OtpCode').value.trim();
-                const errEl = document.getElementById('otpError');
+    .btn-primary {
+        background: #4f46e5;
+        color: white;
+    }
 
-                if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-                    otpControl?.shake();
-                    errEl.textContent = '⚠ Enter all 6 digits of your OTP.';
-                    return;
-                }
+        .btn-primary:hover {
+            background: #4338ca;
+        }
 
-                errEl.textContent = '';
-                setButtonLoading(this, true);
+    .btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
 
-                // Simulate brief processing (real verify happens on final submit)
-                setTimeout(() => {
-                    setButtonLoading(document.getElementById('verifyOtpBtn'), false);
-                    goToProfile();
-                }, 600);
+    .alert {
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 15px;
+    }
+
+    .alert-danger {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .auth-card a {
+        color: #4f46e5;
+        text-decoration: none;
+    }
+
+        .auth-card a:hover {
+            text-decoration: underline;
+        }
+</style>           
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const form = document.querySelector("form");
+        const otpInput = document.querySelector("input[name='OtpCode']");
+        const password = document.querySelector("input[name='Password']");
+        const confirm = document.querySelector("input[name='ConfirmPassword']");
+        const btn = document.querySelector("button[type='submit']");
+
+        if (!form) return;
+
+        const otpRegex = /^\d{6}$/;
+
+        if (otpInput) {
+            otpInput.addEventListener("input", function () {
+                const value = otpInput.value.trim();
+
+                otpInput.classList.toggle("input-error", !otpRegex.test(value));
             });
+        }
 
-            // ── Back button ──────────────────────────────────────────────
-            document.getElementById('backToOtpBtn')?.addEventListener('click', goToOtp);
+        function validatePasswords() {
+            if (!password || !confirm) return;
 
-            // ── Final form submit with client-side validation ────────────
-            document.getElementById('verifyForm')?.addEventListener('submit', function (e) {
-                if (currentStep !== 'profile') {
-                    e.preventDefault();
-                    return;
-                }
-
-                // Validate profile fields
-                const profileInputs = stepProfile.querySelectorAll('.form-control[required]');
-                let hasErrors = false;
-
-                profileInputs.forEach(input => {
-                    if (!Validator.validate(input)) hasErrors = true;
-                });
-
-                // Confirm password cross-field check
-                const pwd     = document.getElementById('Password');
-                const confirm = document.getElementById('ConfirmPassword');
-                if (pwd && confirm && pwd.value !== confirm.value) {
-                    Validator.showError(confirm, 'Passwords do not match.');
-                    hasErrors = true;
-                }
-
-                if (hasErrors) {
-                    e.preventDefault();
-                    Toast.error('Please fix the errors before submitting.');
-                    stepProfile.querySelector('.is-invalid')?.focus();
-                    return;
-                }
-
-                setButtonLoading(document.getElementById('completeBtn'), true);
-            });
-
-            // If server returned errors (model invalid), go to profile step if OTP was correct
-            @if (!ViewData.ModelState.IsValid && !string.IsNullOrEmpty(Model.OtpCode))
-            {
-                    <text>
-                    // Server rejected with profile errors — jump back to profile step
-                    setTimeout(() => goToProfile(), 100);
-                    </text>
+            if (confirm.value && password.value !== confirm.value) {
+                confirm.classList.add("input-error");
+            } else {
+                confirm.classList.remove("input-error");
             }
+        }
+
+        if (password && confirm) {
+            password.addEventListener("input", validatePasswords);
+            confirm.addEventListener("input", validatePasswords);
+        }
+
+        form.addEventListener("submit", function (e) {
+
+            let valid = true;
+
+            if (otpInput && !otpRegex.test(otpInput.value.trim())) {
+                otpInput.classList.add("input-error");
+                valid = false;
+            }
+
+            if (password && confirm && password.value !== confirm.value) {
+                confirm.classList.add("input-error");
+                valid = false;
+            }
+
+            if (!valid) {
+                e.preventDefault();
+                alert("Please fix the errors before submitting.");
+                return;
+            }
+
+            if (btn) {
+                btn.classList.add("loading");
+                btn.innerText = "Verifying...";
+            }
+
         });
-    </script>
-}
+
+    });
+</script>

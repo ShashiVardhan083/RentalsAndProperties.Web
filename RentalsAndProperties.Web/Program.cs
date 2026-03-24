@@ -1,9 +1,22 @@
 ﻿using RentalsAndProperties.Web.Services;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Auth/Login";
+        options.LogoutPath = "/Auth/Logout";
+
+        options.Cookie.Name = "RentalsAuth";
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization();
 // Session
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -32,13 +45,6 @@ builder.Services.AddHttpClient<PropertyApiService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
     client.Timeout = TimeSpan.FromSeconds(60); // longer for image uploads
-}).AddHttpMessageHandler<JwtDelegatingHandler>();
-
-// Property Media
-builder.Services.AddHttpClient<PropertyMediaApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(60); // longer for uploads
 }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
 // Property Search
@@ -79,11 +85,6 @@ builder.Services.AddHttpClient<AnalyticsApiService>(client =>
     client.Timeout = TimeSpan.FromSeconds(30);
 }).AddHttpMessageHandler<JwtDelegatingHandler>();
 
-builder.Services.AddHttpClient<ChatApiService>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
-}).AddHttpMessageHandler<JwtDelegatingHandler>();
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -96,6 +97,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession();
+app.UseAuthentication();  
 app.UseAuthorization();
 
 app.MapControllerRoute(

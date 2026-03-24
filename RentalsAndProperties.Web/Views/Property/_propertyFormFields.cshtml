@@ -1,0 +1,372 @@
+﻿@model RentalsAndProperties.Web.ViewModels.Property.CreatePropertyViewModel
+
+<h3>Basic Information</h3>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Title)
+    @Html.TextBoxFor(m => m.Title, new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.Title, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Description)
+    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 4 })
+    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.City)
+    @Html.DropDownListFor(m => m.City,
+    Html.GetEnumSelectList<CityEnum>(),
+        "--Select City--",
+        new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.City, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Pincode)
+    @Html.TextBoxFor(m => m.Pincode, new { @class = "form-control", @readonly = "true" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Address)
+    @Html.TextBoxFor(m => m.Address, new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+</div>
+
+<h3>Pricing</h3>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Price)
+    @Html.TextBoxFor(m => m.Price, new { type = "number", @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.Price, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.SecurityDeposit)
+    @Html.TextBoxFor(m => m.SecurityDeposit, new { type = "number", @class = "form-control" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.ListingType)
+    @Html.DropDownListFor(m => m.ListingType,
+        Html.GetEnumSelectList<ListingTypeEnum>(),
+        "--Select Listing Type--",
+        new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.ListingType, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.AvailableFrom)
+    @Html.TextBoxFor(m => m.AvailableFrom,
+        "{0:yyyy-MM-dd}",
+        new { type = "date", @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.AvailableFrom, "", new { @class = "text-danger" })
+</div>
+
+<h3>Property Details</h3>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.PropertyType)
+    @Html.DropDownListFor(m => m.PropertyType,
+        Html.GetEnumSelectList<PropertyTypeEnum>(),
+        "--Select Property Type--",
+        new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.PropertyType, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.BHKType)
+    @Html.DropDownListFor(m => m.BHKType,
+        Html.GetEnumSelectList<BhkTypeEnum>(),
+        "--Select BHK Type--",
+        new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.BHKType, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.FurnishingType)
+    @Html.DropDownListFor(m => m.FurnishingType,
+        Html.GetEnumSelectList<FurnishingTypeEnum>(),
+        "--Select Furnishing--",
+        new { @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.FurnishingType, "", new { @class = "text-danger" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Bedrooms)
+    @Html.TextBoxFor(m => m.Bedrooms, new { type = "number", @class = "form-control" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.Bathrooms)
+    @Html.TextBoxFor(m => m.Bathrooms, new { type = "number", @class = "form-control" })
+</div>
+
+<div class="form-group">
+    @Html.LabelFor(m => m.SquareFeet)
+    @Html.TextBoxFor(m => m.SquareFeet, new { type = "number", @class = "form-control" })
+    @Html.ValidationMessageFor(m => m.SquareFeet, "", new { @class = "text-danger" })
+</div>
+
+
+<style>
+    .form-page {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #dad9de;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        font-family: 'Segoe UI', sans-serif;
+    }
+
+    h3 {
+        margin-top: 30px;
+        margin-bottom: 15px;
+        color: #333;
+        border-left: 4px solid #007bff;
+        padding-left: 10px;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        margin-top: 5px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+        font-size: 14px;
+    }
+
+        .form-control:focus {
+            border-color: #007bff;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.15);
+        }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 15px;
+    }
+
+    label {
+        margin-bottom: 5px;
+        font-weight: 600;
+        color: #444;
+    }
+
+    .text-danger {
+        font-size: 13px;
+        color: #dc3545;
+    }
+
+    .input-validation-error {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+    }
+
+    .btn {
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+    }
+
+    .btn-primary {
+        background: #007bff;
+        color: #fff;
+    }
+
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+
+    .btn.loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
+
+    .image-preview-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .preview-item {
+        position: relative;
+        width: 120px;
+        height: 120px;
+    }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #ddd;
+        }
+
+    .preview-remove {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: red;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+    input[type="file"].form-control {
+        color: black;
+        padding: 6px;
+        background-color: #fff;
+    }
+</style>
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const form = document.querySelector("form");
+        const submitBtn = form.querySelector("button[type='submit']");
+        const fileInput = document.querySelector("input[type='file'][name='Images']");
+        const cityDropdown = document.getElementById("City");
+        const pincodeInput = document.getElementById("Pincode");
+
+        if (!cityDropdown || !pincodeInput) return;
+
+        const previewContainer = document.createElement("div");
+        previewContainer.className = "image-preview-container";
+        fileInput.parentNode.appendChild(previewContainer);
+
+        let filesArray = [];
+
+        fileInput.addEventListener("change", function () {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            const allowed = ["image/jpeg", "image/png", "image/webp"];
+
+            Array.from(files).forEach(file => {
+
+                if (filesArray.length >= 5) {
+                    alert("Maximum 5 images allowed");
+                    return;
+                }
+
+                if (!allowed.includes(file.type)) {
+                    alert(file.name + " is not a valid image");
+                    return;
+                }
+
+                if (file.size > 5 * 1024 * 1024) {
+                    alert(file.name + " exceeds 5MB");
+                    return;
+                }
+
+                filesArray.push(file);
+            });
+
+            renderPreview();
+            syncFiles();
+        }
+
+        function renderPreview() {
+            previewContainer.innerHTML = "";
+
+            filesArray.forEach((file, index) => {
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const div = document.createElement("div");
+                    div.className = "preview-item";
+
+                    div.innerHTML = `
+                        <img src="${e.target.result}" />
+                        <button type="button" class="preview-remove">×</button>
+                    `;
+
+                    div.querySelector(".preview-remove").addEventListener("click", () => {
+                        filesArray.splice(index, 1);
+                        renderPreview();
+                        syncFiles();
+                    });
+
+                    previewContainer.appendChild(div);
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function syncFiles() {
+            const dataTransfer = new DataTransfer();
+            filesArray.forEach(file => dataTransfer.items.add(file));
+            fileInput.files = dataTransfer.files;
+        }
+
+        form.addEventListener("submit", function (e) {
+
+            let valid = true;
+
+            const requiredFields = form.querySelectorAll("[required]");
+
+            requiredFields.forEach(field => {
+                if (!field.value || field.value.trim() === "") {
+                    field.classList.add("input-validation-error");
+                    valid = false;
+                } else {
+                    field.classList.remove("input-validation-error");
+                }
+            });
+
+            if (!valid) {
+                e.preventDefault();
+                alert("Please fill all required fields");
+                return;
+            }
+
+            submitBtn.classList.add("loading");
+            submitBtn.innerText = "Submitting...";
+        });
+
+
+        
+
+        cityDropdown.addEventListener("change", async function () {
+
+            const city = this.value;
+
+            if (!city) {
+                pincodeInput.value = "";
+                return;
+            }
+
+            try {
+                const response = await fetch(`/Property/GetPincode?city=${city}`);
+                const data = await response.json();
+
+                if (data && data.pincode) {
+                    pincodeInput.value = data.pincode;
+                } else {
+                    pincodeInput.value = "";
+                }
+            } catch (error) {
+                console.error("Error fetching pincode:", error);
+                pincodeInput.value = "";
+            }
+        });
+
+
+    });
+</script>

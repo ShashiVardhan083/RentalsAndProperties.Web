@@ -1,6 +1,6 @@
 ﻿namespace RentalsAndProperties.Web.Models.Enums
 {
-    public enum PropertyTypeWeb
+    public enum PropertyTypeEnum
     {
         Apartment = 1,
         Villa = 2,

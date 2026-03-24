@@ -1,6 +1,6 @@
 ﻿namespace RentalsAndProperties.Web.Models.Enums
 {
-    public enum CityWeb
+    public enum CityEnum
     {
         Karimnagar = 1,
         Hyderabad = 2,

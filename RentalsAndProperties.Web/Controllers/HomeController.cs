@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
@@ -18,10 +19,6 @@ namespace RentalsAndProperties.Web.Controllers
 
         public async Task<IActionResult> Index()
         {
-            ViewBag.IsAuthenticated = SessionHelper.IsAuthenticated(HttpContext.Session);
-            ViewBag.FullName = SessionHelper.GetFullName(HttpContext.Session);
-            ViewBag.Roles = SessionHelper.GetRoles(HttpContext.Session);
-
             // Load approved properties for the featured section
             var query = new PropertySearchQueryDto
             {
@@ -35,6 +32,7 @@ namespace RentalsAndProperties.Web.Controllers
             var vm = new PropertyListViewModel
             {
                 TotalCount = result?.Data?.TotalCount ?? 0,
+
                 Properties = result?.Data?.Properties?.Select(p => new PropertyCardViewModel
                 {
                     PropertyId = p.PropertyId,
@@ -45,7 +43,16 @@ namespace RentalsAndProperties.Web.Controllers
                     PropertyType = p.PropertyType,
                     BHKType = p.BHKType,
                     PrimaryImageUrl = p.PrimaryImageUrl
-                }).ToList() ?? new()
+                }).ToList() ?? new(),
+
+                IsAuthenticated = User.Identity?.IsAuthenticated ?? false,
+
+                FullName = User.Identity?.Name!,
+
+                Roles = User.Claims
+               .Where(c => c.Type == ClaimTypes.Role)
+               .Select(c => c.Value)
+               .ToList()
             };
             return View(vm);
         }
@@ -53,7 +60,7 @@ namespace RentalsAndProperties.Web.Controllers
         [HttpGet("Home/Error")]
         public IActionResult Error()
         {
-            return View(new Models.ErrorViewModel
+            return View(new ErrorViewModel
             {
                 RequestId = System.Diagnostics.Activity.Current?.Id
                             ?? HttpContext.TraceIdentifier

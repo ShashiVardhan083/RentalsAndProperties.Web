@@ -1,6 +1,4 @@
-﻿using RentalsAndProperties.Web.Controllers;
-
-namespace RentalsAndProperties.Web.Models.Dtos
+﻿namespace RentalsAndProperties.Web.Models.Dtos
 {
     public class AdminAnalyticsDto
     {

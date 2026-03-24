@@ -1,4 +1,4 @@
-﻿namespace RentalsAndProperties.Web.Controllers
+﻿namespace RentalsAndProperties.Web.Models.Dtos
 {
     public class CityStatDto
     {
