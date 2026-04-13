@@ -1,6 +1,4 @@
-﻿using RentalsAndProperties.Web.Models.Dtos;
-
-namespace RentalsAndProperties.Web.ViewModels.Property
+﻿namespace RentalsAndProperties.Web.ViewModels.Property
 {
     public class EditPropertyViewModel : CreatePropertyViewModel
     {

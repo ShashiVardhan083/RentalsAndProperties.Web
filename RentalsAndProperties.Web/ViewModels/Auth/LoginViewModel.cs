@@ -11,10 +11,8 @@ namespace RentalsAndProperties.Web.ViewModels.Auth
         public string PhoneNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required.")]
-        [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;
 
-        public bool RememberMe { get; set; } = false;
     }
 }

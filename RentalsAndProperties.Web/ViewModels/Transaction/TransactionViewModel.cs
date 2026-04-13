@@ -6,43 +6,34 @@ namespace RentalsAndProperties.Web.ViewModels.Transaction
     {
         // Transaction details
         public Guid TransactionId { get; set; }
-
         public decimal Amount { get; set; }
-
         public string PaymentStatus { get; set; } = "";
-
         public string TransactionStatus { get; set; } = "";
-
         public DateTime CreatedAt { get; set; }
-
         public DateTime? CompletedAt { get; set; }
-
+        public Guid CustomerId { get; set; }
+        public Guid OwnerId { get; set; }
         public bool CustomerConfirmed { get; set; }
-
         public bool OwnerConfirmed { get; set; }
-
         public bool HasReview { get; set; }
-
         public string CustomerName { get; set; } = "";
-
         // Property details
         public Guid PropertyId { get; set; }
 
+        [Display(Name = "Property Title")]
         public string PropertyTitle { get; set; } = string.Empty;
 
+        [Display(Name = "City")]
         public string PropertyCity { get; set; } = string.Empty;
 
+        [Display(Name = "Amount")]
+        [DataType(DataType.Currency)]
         public decimal PropertyPrice { get; set; }
-
         public string PropertyType { get; set; } = string.Empty;
-
         public string ListingType { get; set; } = string.Empty;
-
         public string BHKType { get; set; } = string.Empty;
 
         public string OwnerName { get; set; } = string.Empty;
-
-        public double OwnerTrustScore { get; set; }
 
         // Transaction input
         [Required(ErrorMessage = "Transaction type is required.")]

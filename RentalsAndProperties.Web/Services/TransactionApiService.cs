@@ -2,7 +2,6 @@
 using System.Text.Json;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
-using RentalsAndProperties.Web.ViewModels.Transaction;
 
 namespace RentalsAndProperties.Web.Services
 {
@@ -19,15 +18,9 @@ namespace RentalsAndProperties.Web.Services
         }
 
         public async Task<ApiResponseModel<TransactionResponseDto>?> CreateAsync(
-            TransactionViewModel vm)
+            CreateTransactionRequestDto createTransactionRequestDto)
         {
-            var payload = new
-            {
-                PropertyId = vm.PropertyId,
-                TransactionType = vm.TransactionType,
-                PaymentMethod = vm.PaymentMethod
-            };
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var content = new StringContent(JsonSerializer.Serialize(createTransactionRequestDto), Encoding.UTF8, "application/json");
             var response = await HttpClient.PostAsync("api/transactions", content);
             return await ReadAsync<TransactionResponseDto>(response);
         }

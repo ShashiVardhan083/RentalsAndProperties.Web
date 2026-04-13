@@ -19,13 +19,6 @@
         public int ActiveListings { get; set; }
 
         public decimal AveragePropertyPrice { get; set; }
-
-        public List<CityStatDto> TopCities { get; set; } = new();
-
-        public List<MonthlyStatDto> MonthlyRegistrations { get; set; } = new();
-
-        public List<MonthlyStatDto> MonthlyTransactions { get; set; } = new();
-
         public List<ReportResponseDto> RecentReports { get; set; } = new();
     }
 }

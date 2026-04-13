@@ -27,7 +27,7 @@
                 <table class="dash-table">
                     <thead>
                         <tr>
-                            <th>Type</th>
+                            <th>Title</th>
                             <th>Reason</th>
                             <th>Status</th>
                             <th>Date</th>
@@ -37,7 +37,7 @@
                         @foreach (var r in Model)
                         {
                             <tr>
-                                <td><span class="s-chip">@r.TargetType</span></td>
+                                <td>@(string.IsNullOrEmpty(r.TargetTitle) ? "N/A" : r.TargetTitle)<span class="s-chip">@r.TargetType</span></td>
                                 <td>@r.Reason</td>
                                 <td>
                                     <span class="status-pill status-@r.Status.ToLower()">@r.Status</span>
@@ -56,49 +56,136 @@
 
 @section HeadStyles {
     <style>
+
         .dashboard-page {
             padding-top: 68px;
             min-height: 100vh;
         }
-
         .dashboard-header {
-            background: var(--gradient-hero);
+            background: linear-gradient(135deg,#1e1b4b,#312e81);
             border-bottom: 1px solid var(--border-subtle);
             padding: 2.5rem 2rem;
+            margin: auto 350px;
+            border-radius: 20px;
         }
 
         .dashboard-header-inner {
-            max-width: 1280px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .dashboard-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #fff;
+        }
+
+        .dashboard-subtitle {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
         }
 
         .dashboard-body {
-            max-width: 1280px;
-            margin: 0 auto;
+            max-width: 1100px;
+            margin: auto;
             padding: 2rem;
         }
 
+        .dash-table-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 1rem 1.2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            overflow-x: auto;
+        }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .dash-table thead {
+                border-bottom: 1px solid var(--border-subtle);
+            }
+
+            .dash-table th {
+                text-align: left;
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                padding: 0.8rem 0;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .dash-table td {
+                padding: 1rem 0;
+                font-size: 0.9rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+
+            .dash-table tbody tr:hover {
+                background: rgba(99,102,241,0.05);
+            }
+
+        .s-chip {
+            background: rgba(99,102,241,0.15);
+            color: #a78bfa;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+
+        .status-pill {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         .status-pending {
-            background: rgba(247,151,30,.15);
+            background: rgba(245,158,11,.2);
             color: #f59e0b;
         }
 
         .status-resolved {
-            background: rgba(67,233,123,.15);
-            color: #43e97b;
+            background: rgba(16,185,129,.2);
+            color: #10b981;
         }
 
         .status-rejected {
-            background: rgba(239,68,68,.15);
-            color: #fca5a5;
+            background: rgba(239,68,68,.2);
+            color: #ef4444;
         }
 
         .status-underreview {
-            background: rgba(99,102,241,.15);
+            background: rgba(99,102,241,.2);
             color: #a78bfa;
         }
+
+        .report-date {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+
+        .empty-state h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+
+        .empty-state p {
+            color: var(--text-muted);
+        }
+
     </style>
 }

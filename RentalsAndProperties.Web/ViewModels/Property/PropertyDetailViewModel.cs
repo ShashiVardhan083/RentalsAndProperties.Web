@@ -1,5 +1,4 @@
-﻿using RentalsAndProperties.Web.Models.Dtos;
-using RentalsAndProperties.Web.ViewModels.Review;
+﻿using RentalsAndProperties.Web.ViewModels.Review;
 
 namespace RentalsAndProperties.Web.ViewModels.Property
 {
@@ -38,19 +37,13 @@ namespace RentalsAndProperties.Web.ViewModels.Property
         public DateTime AvailableFrom { get; set; }
 
         public string Status { get; set; } = "";
-
         public string OwnerName { get; set; } = "";
 
         public string OwnerPhone { get; set; } = "";
-
-        public double OwnerTrustScore { get; set; }
         public Guid OwnerId { get; set; }
-        public string? RejectionReason { get; set; }
 
         public DateTime CreatedAt { get; set; }
-        public List<ReviewViewModel> Reviews { get; set; } = new();
-        public int ReviewCount { get; set; }
-        public double AverageRating { get; set; }
+        public List<ReviewDisplayViewModel> Reviews { get; set; } = new();
         public List<PropertyImageViewModel> Images { get; set; } = new();
 
         public string? PrimaryImageUrl =>

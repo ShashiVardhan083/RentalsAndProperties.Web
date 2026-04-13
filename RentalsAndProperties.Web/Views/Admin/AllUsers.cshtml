@@ -1,0 +1,224 @@
+﻿@model List<RentalsAndProperties.Web.ViewModels.Admin.UserListViewModel>
+@{
+    ViewData["Title"] = "Users";
+}
+
+<div class="users-page">
+
+    <div class="users-header">
+        <div>
+            <h1 class="users-title">Users management</h1>
+            <p class="users-sub">Manage all registered users on the platform</p>
+        </div>
+        <div class="users-count">@Model.Count user@(Model.Count != 1 ? "s" : "")</div>
+    </div>
+
+    @if (ViewBag.Error != null)
+    {
+        <div class="alert alert-error">⚠ @ViewBag.Error</div>
+    }
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="empty-state">No users found.</div>
+    }
+    else
+    {
+        <div class="table-card">
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model)
+                    {
+                        var initials = string.Join("", user.FullName.Split(' ')
+                        .Take(2).Select(w => w[0].ToString().ToUpper()));
+                        <tr>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="avatar">@initials</div>
+                                    <span class="user-name">@user.FullName</span>
+                                </div>
+                            </td>
+                            <td class="muted">@(string.IsNullOrEmpty(user.Email) ? "—" : user.Email)</td>
+                            <td class="muted">@user.PhoneNumber</td>
+                            <td><span class="pill pill-role">@user.Roles</span></td>
+                            <td>
+                                @if (user.Status == "Blocked")
+                                {
+                                    <span class="pill pill-blocked">Blocked</span>
+                                }
+                                else
+                                {
+                                    <span class="pill pill-active">Active</span>
+                                }
+                            </td>
+                            <td class="muted">@user.CreatedAt</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@section HeadStyles {
+    <style>
+        .users-page {
+            padding-top: 80px;
+            min-height: 100vh;
+            max-width: 1200px;
+            margin: auto;
+            padding-left: 2rem;
+            padding-right: 2rem;
+        }
+
+        .users-header {
+            background: #1e1b4b;
+            border-radius: 12px;
+            padding: 1.5rem 1.75rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .users-title {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .users-sub {
+            color: rgba(255,255,255,0.55);
+            font-size: .8rem;
+            margin-top: 3px;
+        }
+
+        .users-count {
+            background: rgba(255,255,255,0.12);
+            color: rgba(255,255,255,0.85);
+            font-size: .8rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+        }
+
+        .table-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: .85rem;
+        }
+
+            .users-table thead {
+                border-bottom: 1px solid var(--border-subtle);
+            }
+
+            .users-table th {
+                padding: 11px 16px;
+                text-align: left;
+                font-size: .7rem;
+                font-weight: 700;
+                color: var(--text-muted);
+                letter-spacing: .05em;
+                text-transform: uppercase;
+                background: rgba(255,255,255,.02);
+            }
+
+            .users-table td {
+                padding: 13px 16px;
+                border-bottom: 1px solid rgba(255,255,255,.05);
+                vertical-align: middle;
+            }
+
+            .users-table tbody tr:last-child td {
+                border-bottom: none;
+            }
+
+            .users-table tbody tr:hover td {
+                background: rgba(99,102,241,.04);
+            }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(99,102,241,.2);
+            color: #a78bfa;
+            font-size: .75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: .875rem;
+        }
+
+        .muted {
+            color: var(--text-muted);
+            font-size: .82rem;
+        }
+
+        .pill {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: .7rem;
+            font-weight: 600;
+        }
+
+        .pill-role {
+            background: rgba(99,102,241,.15);
+            color: #a78bfa;
+        }
+
+        .pill-active {
+            background: rgba(16,185,129,.15);
+            color: #10b981;
+        }
+
+        .pill-blocked {
+            background: rgba(239,68,68,.15);
+            color: #ef4444;
+        }
+
+        .alert-error {
+            padding: 10px;
+            border-radius: 8px;
+            background: #7f1d1d;
+            color: #fecaca;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-muted);
+        }
+    </style>
+}

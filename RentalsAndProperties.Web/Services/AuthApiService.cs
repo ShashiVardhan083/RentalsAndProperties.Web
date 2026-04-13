@@ -1,10 +1,8 @@
 ﻿using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
-using static System.Net.WebRequestMethods;
 
 namespace RentalsAndProperties.Web.Services
 {
@@ -91,12 +89,13 @@ namespace RentalsAndProperties.Web.Services
         }
         //  Generic helpers
 
+        //serialize an object to JSON, send it via HTTP POST, read the response, and convert it back into a strongly-typed objectp
         private async Task<ApiResponseModel<T>?> PostAsync<T>(string url, object payload)
         {
             try
             {
-                var json = JsonSerializer.Serialize(payload);
-                var content = new StringContent(json, Encoding.UTF8, "application/json"); 
+                var json = JsonSerializer.Serialize(payload); //convert object to json
+                var content = new StringContent(json, Encoding.UTF8, "application/json");  //Wrap in HTTP content
                 var response = await HttpClient.PostAsync(url, content);
                 var body = await response.Content.ReadAsStringAsync();
 

@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
+using RentalsAndProperties.Web.Mappings;
+using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
 using RentalsAndProperties.Web.ViewModels.Review;
-
 namespace RentalsAndProperties.Web.Controllers
 {
     [JwtAuthorize]
@@ -21,16 +22,26 @@ namespace RentalsAndProperties.Web.Controllers
         // GET /Review/Create?propertyId=&reviewType=Transaction&transactionId=
         [HttpGet]
         public async Task<IActionResult> Create(Guid propertyId, string reviewType = "Interaction",
-                                                 Guid? transactionId = null)
+                                         Guid? transactionId = null)
         {
             var result = await PropertyApi.GetDetailsAsync(propertyId);
+
             if (result == null || !result.Success || result.Data == null)
             {
                 TempData["Error"] = "Property not found.";
                 return RedirectToAction("Browse", "Property");
             }
 
-            var vm = new ReviewViewModel
+            var userName = User.Identity?.Name;
+
+            if (!string.IsNullOrEmpty(userName) &&
+                userName.Equals(result.Data.OwnerName, StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["Error"] = "You cannot review your own property.";
+                return RedirectToAction("Details", "Property", new { id = propertyId });
+            }
+
+            var createReviewViewModel = new CreateReviewViewModel
             {
                 PropertyId = propertyId,
                 PropertyTitle = result.Data.Title,
@@ -38,27 +49,27 @@ namespace RentalsAndProperties.Web.Controllers
                 TransactionId = transactionId
             };
 
-            return View(vm);
+            return View(createReviewViewModel);
         }
 
         // POST /Review/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(ReviewViewModel vm)
+        public async Task<IActionResult> Create(CreateReviewViewModel createReviewViewModel)
         {
             if (!ModelState.IsValid)
-                return View(vm);
-
-            var result = await ReviewApi.CreateAsync(vm);
+                return View(createReviewViewModel);
+            var CreateReviewRequestDto = ReviewMapper.ToCreateDto(createReviewViewModel);
+            var result = await ReviewApi.CreateAsync(CreateReviewRequestDto);
 
             if (result == null || !result.Success)
             {
                 ModelState.AddModelError("", result?.Message ?? "Failed to submit review.");
-                return View(vm);
+                return View(createReviewViewModel);
             }
 
             TempData["ToastSuccess"] = " Review submitted! Thank you for your feedback.";
-            return RedirectToAction("Details", "Property", new { id = vm.PropertyId });
+            return RedirectToAction("Details", "Property", new { id = createReviewViewModel.PropertyId });
         }
     }
 }

@@ -209,7 +209,7 @@
 
             if (!regex.test(value)) {
                 e.preventDefault();
-                alert("Please enter a valid phone number");
+                Toast.error("Please fix the errors before submitting.");
                 return;
             }
 

@@ -1,7 +1,6 @@
 ﻿using System.Text.Json;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
-using RentalsAndProperties.Web.ViewModels.Admin;
 namespace RentalsAndProperties.Web.Services
 {
     public class AnalyticsApiService
@@ -44,6 +43,37 @@ namespace RentalsAndProperties.Web.Services
                 {
                     Success = false,
                     Message = "Analytics service unavailable."
+                };
+            }
+        }
+        public async Task<ApiResponseModel<List<UserDto>>?> GetAllUsersAsync()
+        {
+            try
+            {
+                var response = await HttpClient.GetAsync("api/admin/analytics/allUsers");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    Logger.LogError("AllUsers API failed. Status: {status}", response.StatusCode);
+                    return new ApiResponseModel<List<UserDto>>
+                    {
+                        Success = false,
+                        Message = $"API Error: {response.StatusCode}"
+                    };
+                }
+
+                var body = await response.Content.ReadAsStringAsync();
+
+                return JsonSerializer.Deserialize<ApiResponseModel<List<UserDto>>>(body, Opts);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "GetAllUsers API call failed");
+
+                return new ApiResponseModel<List<UserDto>>
+                {
+                    Success = false,
+                    Message = "GetAllUsers service unavailable."
                 };
             }
         }

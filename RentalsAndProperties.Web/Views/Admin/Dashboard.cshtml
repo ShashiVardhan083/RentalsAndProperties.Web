@@ -4,12 +4,14 @@
 }
 
 <div class="dashboard-page">
-    <div class="dashboard-header" style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);">
+
+    <!-- HEADER -->
+    <div class="dashboard-header">
         <div class="dashboard-header-inner">
             <div>
                 <div class="admin-badge">🛡 Admin Panel</div>
-                <h1 class="dashboard-title" style="color:#fff;">Analytics Dashboard</h1>
-                <p class="dashboard-subtitle" style="color:rgba(255,255,255,.7);">
+                <h1 class="dashboard-title">Analytics Dashboard</h1>
+                <p class="dashboard-subtitle">
                     Platform overview — updated live
                 </p>
             </div>
@@ -18,48 +20,57 @@
 
     <div class="dashboard-body">
 
+        <!-- ERROR -->
         @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
         {
-            <div class="alert alert-error">⚠ @ViewBag.Error</div>
+            <div class="alert-error">⚠ @ViewBag.Error</div>
         }
 
-        <!-- ── Stat Cards ── -->
+        <!-- STATS -->
         <div class="analytics-grid">
+            <a asp-action="AllUsers" asp-controller="Admin" style="text-decoration: none">
             <div class="stat-card">
                 <div class="stat-icon">👥</div>
                 <div class="stat-value">@Model.TotalUsers</div>
                 <div class="stat-label">Total Users</div>
             </div>
+            </a>
             <div class="stat-card">
                 <div class="stat-icon">🏡</div>
                 <div class="stat-value">@Model.TotalOwners</div>
                 <div class="stat-label">Owners</div>
             </div>
+
             <div class="stat-card">
                 <div class="stat-icon">🏠</div>
                 <div class="stat-value">@Model.TotalProperties</div>
-                <div class="stat-label">Total Properties</div>
+                <div class="stat-label">Properties</div>
             </div>
+
             <div class="stat-card stat-orange">
                 <div class="stat-icon">⏳</div>
                 <div class="stat-value">@Model.PendingApprovals</div>
-                <div class="stat-label">Pending Approvals</div>
+                <div class="stat-label">Pending</div>
             </div>
+
             <div class="stat-card stat-green">
                 <div class="stat-icon">✅</div>
                 <div class="stat-value">@Model.ActiveListings</div>
-                <div class="stat-label">Active Listings</div>
+                <div class="stat-label">Active</div>
             </div>
+
             <div class="stat-card stat-purple">
                 <div class="stat-icon">💳</div>
                 <div class="stat-value">@Model.CompletedTransactions</div>
-                <div class="stat-label">Completed Deals</div>
+                <div class="stat-label">Deals</div>
             </div>
+
             <div class="stat-card">
                 <div class="stat-icon">⭐</div>
                 <div class="stat-value">@Model.TotalReviews</div>
                 <div class="stat-label">Reviews</div>
             </div>
+
             <div class="stat-card stat-red">
                 <div class="stat-icon">🚩</div>
                 <div class="stat-value">@Model.TotalReports</div>
@@ -67,72 +78,53 @@
             </div>
         </div>
 
-        <!-- ── Charts Row ── -->
-        <div class="charts-row">
+        <!-- CHARTS -->
+        <div class="charts-grid">
 
-            <!-- Monthly Registrations -->
-            <div class="chart-card">
-                <h3 class="chart-title">📈 Monthly Registrations</h3>
-                <canvas id="regChart" height="200"></canvas>
-            </div>
-
-            <!-- Monthly Transactions -->
-            <div class="chart-card">
-                <h3 class="chart-title">💰 Monthly Transactions</h3>
-                <canvas id="txChart" height="200"></canvas>
-            </div>
-
-        </div>
-
-        <!-- ── Bottom Row ── -->
-        <div class="bottom-row">
-
-            <!-- Top Cities -->
-            <div class="chart-card">
-                <h3 class="chart-title">📍 Top Cities</h3>
-                <canvas id="cityChart" height="220"></canvas>
-            </div>
-
-            <!-- Quick Stats -->
             <div class="chart-card">
                 <h3 class="chart-title">📊 Property Stats</h3>
+
                 <div class="quick-stats">
                     <div class="qs-item">
-                        <span class="qs-label">Avg. Property Price</span>
-                        <span class="qs-value">₹@Model.AveragePropertyPrice.ToString("N0")</span>
+                        <span>Avg Price</span>
+                        <strong>₹@Model.AveragePropertyPrice.ToString("N0")</strong>
                     </div>
+
                     <div class="qs-item">
-                        <span class="qs-label">Active / Total</span>
-                        <span class="qs-value">@Model.ActiveListings / @Model.TotalProperties</span>
+                        <span>Active / Total</span>
+                        <strong>@Model.ActiveListings / @Model.TotalProperties</strong>
                     </div>
+
                     <div class="qs-item">
-                        <span class="qs-label">Pending Approvals</span>
-                        <span class="qs-value" style="color:#f59e0b;">@Model.PendingApprovals</span>
+                        <span>Pending</span>
+                        <strong class="text-warning">@Model.PendingApprovals</strong>
                     </div>
+
                     <div class="qs-item">
-                        <span class="qs-label">Conversion Rate</span>
-                        <span class="qs-value">
+                        <span>Conversion</span>
+                        <strong>
                             @(Model.TotalProperties > 0
                                                         ? $"{(Model.CompletedTransactions * 100.0 / Model.TotalProperties):F1}%"
                                                         : "—")
-                        </span>
+                        </strong>
                     </div>
                 </div>
-                <div style="margin-top:1.5rem;">
-                    <canvas id="statusPieChart" height="180"></canvas>
-                </div>
+
+                <canvas id="statusPieChart"></canvas>
             </div>
 
         </div>
 
-        <!-- ── Recent Reports ── -->
+        <!-- REPORTS -->
         @if (Model.RecentReports.Any())
         {
-            <div class="detail-card" style="margin-top:1.5rem;">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-                    <h3 style="font-size:1rem;font-weight:700;">🚩 Recent Reports</h3>
-                    <a href="/Admin/Reports" class="btn btn-secondary btn-sm">View All →</a>
+            <div class="detail-card">
+
+                <div class="detail-header">
+                    <h3>🚩 Recent Reports</h3>
+                    <a href="/Admin/Reports" class="btn-secondary">View All →</a>
                 </div>
+
                 <table class="dash-table">
                     <thead>
                         <tr>
@@ -143,19 +135,20 @@
                             <th>Date</th>
                         </tr>
                     </thead>
+
                     <tbody>
                         @foreach (var r in Model.RecentReports)
                         {
                             <tr>
                                 <td>@r.ReporterName</td>
-                                <td><span class="s-chip">@r.TargetType</span></td>
+                                <td>@(string.IsNullOrEmpty(r.TargetTitle) ? "N/A" : r.TargetTitle)<span class="chip">@r.TargetType</span></td>
                                 <td>@r.Reason</td>
                                 <td>
-                                    <span class="status-pill status-@r.Status.ToLower()">@r.Status</span>
+                                    <span class="status-pill status-@r.Status.ToLower()">
+                                        @r.Status
+                                    </span>
                                 </td>
-                                <td style="font-size:.8rem;color:var(--text-muted);">
-                                    @r.CreatedAt.ToString("MMM dd")
-                                </td>
+                                <td>@r.CreatedAt.ToString("MMM dd")</td>
                             </tr>
                         }
                     </tbody>
@@ -168,90 +161,90 @@
 
 @section HeadStyles {
     <style>
+
+        /* PAGE */
         .dashboard-page {
-            padding-top: 68px;
+            padding-top: 80px;
             min-height: 100vh;
         }
 
+        /* HEADER */
         .dashboard-header {
-            padding: 2.5rem 2rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg,#1e1b4b,#312e81);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            margin: auto 300px;
+            border-radius: 20px;
         }
 
         .dashboard-header-inner {
-            max-width: 1280px;
-            margin: 0 auto;
+            max-width: 1200px;
+            margin: auto;
         }
 
         .admin-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: .4rem;
-            padding: .3rem .85rem;
-            background: rgba(255,255,255,.1);
-            border: 1px solid rgba(255,255,255,.2);
-            border-radius: 100px;
-            font-size: .75rem;
-            font-weight: 700;
-            color: rgba(255,255,255,.9);
-            text-transform: uppercase;
-            letter-spacing: .05em;
-            margin-bottom: .75rem;
+            padding: 4px 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: #fff;
+            font-size: 12px;
         }
 
         .dashboard-title {
-            font-size: 1.75rem;
-            font-weight: 800;
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
+        .dashboard-subtitle {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9rem;
+        }
+
+        /* BODY */
         .dashboard-body {
-            max-width: 1280px;
-            margin: 0 auto;
+            max-width: 1200px;
+            margin: auto;
             padding: 2rem;
         }
 
+        /* GRID */
         .analytics-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(200px,1fr));
+            grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
             gap: 1rem;
-            margin-bottom: 1.5rem;
         }
 
+        /* CARD */
         .stat-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem 1.5rem;
+            border-radius: 12px;
+            padding: 1.3rem;
             display: flex;
             flex-direction: column;
-            gap: .35rem;
-            transition: transform .2s,box-shadow .2s;
+            gap: 0.4rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: 0.2s;
         }
 
             .stat-card:hover {
-                transform: translateY(-3px);
-                box-shadow: var(--shadow-card);
+                transform: translateY(-4px);
             }
 
-        .stat-icon {
-            font-size: 1.5rem;
-        }
-
         .stat-value {
-            font-family: 'Syne',sans-serif;
-            font-size: 2rem;
-            font-weight: 800;
-            line-height: 1;
+            font-size: 1.8rem;
+            font-weight: 700;
         }
 
         .stat-label {
-            font-size: .78rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
         }
 
+        /* COLORS */
         .stat-green .stat-value {
-            color: #43e97b;
+            color: #10b981;
         }
 
         .stat-orange .stat-value {
@@ -266,188 +259,102 @@
             color: #ef4444;
         }
 
-        .charts-row {
+        /* CHART */
+        .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .bottom-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
+            margin-top: 1.5rem;
         }
 
         .chart-card {
             background: var(--bg-card);
             border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
+            border-radius: 12px;
             padding: 1.5rem;
         }
 
-        .chart-title {
-            font-size: .95rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
+        /* QUICK STATS */
         .quick-stats {
             display: flex;
             flex-direction: column;
-            gap: .85rem;
+            gap: 0.7rem;
         }
 
         .qs-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: .75rem 1rem;
-            background: rgba(99,102,241,.05);
-            border-radius: var(--radius-md);
+            padding: 0.7rem 1rem;
+            background: rgba(99,102,241,0.08);
+            border-radius: 8px;
         }
 
-        .qs-label {
-            font-size: .82rem;
-            color: var(--text-secondary);
-        }
-
-        .qs-value {
-            font-weight: 700;
-            font-size: .95rem;
-        }
-
+        /* TABLE */
         .detail-card {
+            margin-top: 1.5rem;
             background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
+            border-radius: 12px;
             padding: 1.5rem;
         }
 
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .dash-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .dash-table th,
+            .dash-table td {
+                padding: 0.6rem;
+            }
+
+            .dash-table tr {
+                border-bottom: 1px solid var(--border-subtle);
+            }
+
+                .dash-table tr:hover {
+                    background: rgba(99,102,241,0.05);
+                }
+
+        /* STATUS */
+        .status-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+
         .status-pending {
-            background: rgba(247,151,30,.15);
             color: #f59e0b;
         }
 
         .status-resolved {
-            background: rgba(67,233,123,.15);
-            color: #43e97b;
+            color: #10b981;
         }
 
         .status-rejected {
-            background: rgba(239,68,68,.15);
-            color: #fca5a5;
+            color: #ef4444;
         }
 
-        .status-underreview {
-            background: rgba(99,102,241,.15);
-            color: #a78bfa;
+        /* SMALL */
+        .chip {
+            background: rgba(99,102,241,0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
         }
 
-        @@media(max-width:900px) {
-            .charts-row, .bottom-row {
-                grid-template-columns: 1fr;
-            }
+        /* ALERT */
+        .alert-error {
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 10px;
+            border-radius: 8px;
         }
+
+
     </style>
-}
-
-@section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <script>
-        const chartDefaults = {
-            font: { family: "'DM Sans', sans-serif" },
-            color: 'rgba(255,255,255,.6)'
-        };
-        Chart.defaults.font.family = chartDefaults.font.family;
-        Chart.defaults.color = chartDefaults.color;
-
-        const gridColor = 'rgba(255,255,255,.07)';
-        const accent = '#6c63ff';
-        const accent2 = '#43e97b';
-
-        // Monthly Registrations
-        const regData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyRegistrations));
-        new Chart(document.getElementById('regChart'), {
-            type: 'bar',
-            data: {
-                labels: regData.map(d => d.month),
-                datasets: [{
-                    label: 'Registrations',
-                    data: regData.map(d => d.count),
-                    backgroundColor: 'rgba(108,99,255,.6)',
-                    borderColor: accent,
-                    borderWidth: 2,
-                    borderRadius: 6
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } },
-                scales: { y: { grid: { color: gridColor } }, x: { grid: { display: false } } } }
-        });
-
-        // Monthly Transactions
-        const txData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyTransactions));
-        new Chart(document.getElementById('txChart'), {
-            type: 'line',
-            data: {
-                labels: txData.map(d => d.month),
-                datasets: [{
-                    label: 'Transactions',
-                    data: txData.map(d => d.count),
-                    borderColor: accent2,
-                    backgroundColor: 'rgba(67,233,123,.1)',
-                    fill: true,
-                    tension: 0.4,
-                    pointBackgroundColor: accent2,
-                    pointRadius: 4
-                }]
-            },
-            options: { responsive: true, plugins: { legend: { display: false } },
-                scales: { y: { grid: { color: gridColor } }, x: { grid: { display: false } } } }
-        });
-
-        // Top Cities
-        const cityData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopCities));
-        new Chart(document.getElementById('cityChart'), {
-            type: 'bar',
-            data: {
-                labels: cityData.map(d => d.city),
-                datasets: [{
-                    label: 'Listings',
-                    data: cityData.map(d => d.count),
-                    backgroundColor: ['rgba(108,99,255,.7)','rgba(67,233,123,.7)',
-                        'rgba(247,151,30,.7)','rgba(236,72,153,.7)','rgba(14,165,233,.7)'],
-                    borderRadius: 6
-                }]
-            },
-            options: {
-                responsive: true,
-                indexAxis: 'y',
-                plugins: { legend: { display: false } },
-                scales: { x: { grid: { color: gridColor } }, y: { grid: { display: false } } }
-            }
-        });
-
-        // Pie chart: Active vs Pending vs Others
-        new Chart(document.getElementById('statusPieChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Active', 'Pending', 'Other'],
-                datasets: [{
-                    data: [@Model.ActiveListings, @Model.PendingApprovals,
-                        Math.Max(0, @Model.TotalProperties - @Model.ActiveListings - @Model.PendingApprovals)],
-                    backgroundColor: ['rgba(67,233,123,.8)','rgba(247,151,30,.8)','rgba(108,99,255,.5)'],
-                    borderColor: ['#43e97b','#f59e0b','#6c63ff'],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'bottom', labels: { padding: 16, font: { size: 12 } } }
-                },
-                cutout: '65%'
-            }
-        });
-    </script>
 }

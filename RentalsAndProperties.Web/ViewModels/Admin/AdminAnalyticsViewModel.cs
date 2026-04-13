@@ -13,21 +13,6 @@ namespace RentalsAndProperties.Web.ViewModels.Admin
         public int TotalReports { get; set; }
         public int ActiveListings { get; set; }
         public decimal AveragePropertyPrice { get; set; }
-        public List<CityStatViewModel> TopCities { get; set; } = new();
-        public List<MonthlyStatViewModel> MonthlyRegistrations { get; set; } = new();
-        public List<MonthlyStatViewModel> MonthlyTransactions { get; set; } = new();
         public List<ReportViewModel> RecentReports { get; set; } = new();
-    }
-
-    public class CityStatViewModel
-    {
-        public string City { get; set; } = string.Empty;
-        public int Count { get; set; }
-    }
-
-    public class MonthlyStatViewModel
-    {
-        public string Month { get; set; } = string.Empty;
-        public int Count { get; set; }
     }
 }

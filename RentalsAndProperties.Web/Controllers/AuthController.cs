@@ -1,10 +1,9 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
-using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.Services;
+using RentalsAndProperties.Web.Helpers;
 using RentalsAndProperties.Web.ViewModels.Auth;
 
 namespace RentalsAndProperties.Web.Controllers
@@ -24,7 +23,7 @@ namespace RentalsAndProperties.Web.Controllers
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
-            if (SessionHelper.IsAuthenticated(HttpContext.Session))
+            if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
 
             ViewBag.ReturnUrl = returnUrl;
@@ -33,12 +32,12 @@ namespace RentalsAndProperties.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel loginViewModel, string? returnUrl = null)
         {
             if (!ModelState.IsValid)
-                return View(model);
+                return View(loginViewModel);
 
-            var result = await AuthApi.LoginAsync(model.PhoneNumber, model.Password);
+            var result = await AuthApi.LoginAsync(loginViewModel.PhoneNumber, loginViewModel.Password);
 
             if (result == null || !result.Success || result.Data == null)
             {
@@ -47,50 +46,17 @@ namespace RentalsAndProperties.Web.Controllers
                                ?? "Login failed. Please try again.";
 
                 ModelState.AddModelError(string.Empty, errorMsg);
-                return View(model);
+                return View(loginViewModel);
             }
 
-            // Store auth in session
-            SessionHelper.SetAuthSession(
-                HttpContext.Session,
-                result.Data.Token,
+            await AuthHelper.SignInUser(
+                HttpContext,
                 result.Data.FullName,
-                result.Data.PhoneNumber,
-                result.Data.Email,
-                result.Data.Roles,
-                result.Data.ExpiresAt);
-
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, result.Data.FullName ?? ""),
-                new Claim(ClaimTypes.Email, result.Data.Email ?? ""),
-                new Claim("JwtToken",result.Data.Token)
-            };
-
-            // Add roles
-            if (result.Data.Roles != null)
-            {
-                foreach (var role in result.Data.Roles)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
-                }
-            }
-            
-
-            // Create identity
-            var identity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme
+                result.Data.Email!,
+                result.Data.Token,
+                result.Data.Roles
             );
-
-            var principal = new ClaimsPrincipal(identity);
-
-            // Sign in with cookie
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal
-            );
-            Logger.LogInformation("User logged in: {Phone}", model.PhoneNumber[..^4] + "****");
+            Logger.LogInformation("User logged in: {Phone}", loginViewModel.PhoneNumber[..^4] + "****");
 
             TempData["ToastSuccess"] = $"Welcome back, {result.Data.FullName}!";
 
@@ -110,7 +76,7 @@ namespace RentalsAndProperties.Web.Controllers
         [HttpGet]
         public IActionResult Register()
         {
-            if (SessionHelper.IsAuthenticated(HttpContext.Session))
+            if (User.Identity?.IsAuthenticated == true)
                 return RedirectToAction("Index", "Home");
 
             return View(new RegisterPhoneViewModel());
@@ -118,12 +84,12 @@ namespace RentalsAndProperties.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterPhoneViewModel model)
+        public async Task<IActionResult> Register(RegisterPhoneViewModel registerPhoneViewModel)
         {
             if (!ModelState.IsValid)
-                return View(model);
+                return View(registerPhoneViewModel);
 
-            var result = await AuthApi.SendOtpAsync(model.PhoneNumber);
+            var result = await AuthApi.SendOtpAsync(registerPhoneViewModel.PhoneNumber);
 
             if (result == null || !result.Success)
             {
@@ -132,14 +98,14 @@ namespace RentalsAndProperties.Web.Controllers
                     ?? result?.Message
                     ?? "Failed to send OTP. Please try again.";
 
-                ModelState.AddModelError(nameof(model.PhoneNumber), errorMsg);
+                ModelState.AddModelError(nameof(registerPhoneViewModel.PhoneNumber), errorMsg);
                 ModelState.AddModelError(string.Empty, errorMsg);
 
-                return View(model);
+                return View(registerPhoneViewModel);
             }
 
             // Store phone in TempData for step 2
-            TempData["RegisterPhone"] = model.PhoneNumber;
+            TempData["RegisterPhone"] = registerPhoneViewModel.PhoneNumber;
             TempData["DevOtp"] = result.Data?.DevOtp; // dev mode only
 
             return RedirectToAction(nameof(VerifyOtp));
@@ -161,20 +127,20 @@ namespace RentalsAndProperties.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> VerifyOtp(OtpVerifyViewModel model)
+        public async Task<IActionResult> VerifyOtp(OtpVerifyViewModel verifyOtpViewModel)
         {
             ViewBag.DevOtp = TempData.Peek("DevOtp");
 
             if (!ModelState.IsValid)
-                return View(model);
+                return View(verifyOtpViewModel);
 
             var result = await AuthApi.VerifyOtpAsync(
-                model.PhoneNumber,
-                model.OtpCode,
-                model.FullName,
-                model.Email,
-                model.Password,
-                model.ConfirmPassword);
+                verifyOtpViewModel.PhoneNumber,
+                verifyOtpViewModel.OtpCode,
+                verifyOtpViewModel.FullName,
+                verifyOtpViewModel.Email,
+                verifyOtpViewModel.Password,
+                verifyOtpViewModel.ConfirmPassword);
 
             if (result == null || !result.Success || result.Data == null)
             {
@@ -185,45 +151,23 @@ namespace RentalsAndProperties.Web.Controllers
                 else
                     ModelState.AddModelError(string.Empty, result?.Message ?? "Verification failed.");
 
-                return View(model);
+                return View(verifyOtpViewModel);
             }
 
-            // Auto-login after registration
-            SessionHelper.SetAuthSession(
-                HttpContext.Session,
-                result.Data.Token,
-                result.Data.FullName,
-                result.Data.PhoneNumber,
-                result.Data.Email,
-                result.Data.Roles,
-                result.Data.ExpiresAt);
+            var token = User.Claims
+                .FirstOrDefault(c => c.Type == "JwtToken")?.Value;
 
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, result.Data.FullName ?? ""),
-                new Claim(ClaimTypes.Email, result.Data.Email ?? ""),
-                new Claim("JwtToken",result.Data.Token)
-            };
+            if (!string.IsNullOrEmpty(token))
+                await AuthApi.LogoutAsync(token);
 
-            if (result.Data.Roles != null)
-            {
-                foreach (var role in result.Data.Roles)
-                {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
-                }
-            }
-
-            var identity = new ClaimsIdentity(
-                claims,
-                CookieAuthenticationDefaults.AuthenticationScheme
-            );
-
-            var principal = new ClaimsPrincipal(identity);
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                principal
-            );
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await AuthHelper.SignInUser(
+               HttpContext,
+               result.Data.FullName,
+               result.Data.Email!,
+               result.Data.Token,
+               result.Data.Roles
+           );
 
             TempData["WelcomeMessage"] = $"Welcome, {result.Data.FullName}! Your account has been created.";
             return RedirectToAction("Index", "Home");
@@ -236,14 +180,12 @@ namespace RentalsAndProperties.Web.Controllers
         [JwtAuthorize]
         public async Task<IActionResult> Logout()
         {
-            var token = SessionHelper.GetToken(HttpContext.Session);
+            var token = User.Claims.FirstOrDefault(c => c.Type == "JwtToken")?.Value;
+
             if (!string.IsNullOrEmpty(token))
                 await AuthApi.LogoutAsync(token);
 
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-            SessionHelper.ClearAuthSession(HttpContext.Session);
-            HttpContext.Session.Clear();
             return RedirectToAction("Index", "Home");
         }
 
@@ -269,16 +211,13 @@ namespace RentalsAndProperties.Web.Controllers
             }
 
             // Refresh session with new token + roles
-            SessionHelper.SetAuthSession(
-                HttpContext.Session,
-                result.Data.Token,
-                result.Data.FullName,
-                result.Data.PhoneNumber,
-                result.Data.Email,
-                result.Data.Roles,
-                result.Data.ExpiresAt
-            );
-
+            await AuthHelper.SignInUser(
+               HttpContext,
+               result.Data.FullName,
+               result.Data.Email!,
+               result.Data.Token,
+               result.Data.Roles
+           );
             TempData["Success"] = " You're now an Owner! Start listing your properties.";
             return RedirectToAction("Dashboard", "Property");
         }

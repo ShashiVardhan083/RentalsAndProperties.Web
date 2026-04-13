@@ -30,13 +30,12 @@ namespace RentalsAndProperties.Web.Services
         }
 
         public async Task<ApiResponseModel<PropertySearchResultDto>?> SearchAsync(
-            PropertySearchQueryDto query)
+            PropertySearchQueryDto propertySearchQueryDto)
         {
-            var qs = BuildQueryString(query);
-            var response = await HttpClient.GetAsync($"api/property/search?{qs}");
+            var queryString = BuildQueryString(propertySearchQueryDto);
+            var response = await HttpClient.GetAsync($"api/property/search?{queryString}");
             var result = await ReadAsync<PropertySearchResultDto>(response);
 
-            // ✅ Fix image URLs for Browse page cards
             if (result?.Data?.Properties != null)
             {
                 foreach (var prop in result.Data.Properties)
@@ -51,28 +50,22 @@ namespace RentalsAndProperties.Web.Services
             return result;
         }
 
-        public async Task<ApiResponseModel<List<string>>?> GetCitiesAsync()
-        {
-            var response = await HttpClient.GetAsync("api/property/cities");
-            return await ReadAsync<List<string>>(response);
-        }
-
-        private static string BuildQueryString(PropertySearchQueryDto q)
+        private static string BuildQueryString(PropertySearchQueryDto propertySearchQueryDto)
         {
             var parts = new List<string>();
-            if (!string.IsNullOrWhiteSpace(q.City))
-                parts.Add($"city={Uri.EscapeDataString(q.City)}");
-            if (q.MinPrice.HasValue) parts.Add($"minPrice={q.MinPrice}");
-            if (q.MaxPrice.HasValue) parts.Add($"maxPrice={q.MaxPrice}");
-            if (!string.IsNullOrWhiteSpace(q.BHKType)) parts.Add($"bhkType={q.BHKType}");
-            if (!string.IsNullOrWhiteSpace(q.PropertyType)) parts.Add($"propertyType={q.PropertyType}");
-            if (!string.IsNullOrWhiteSpace(q.ListingType)) parts.Add($"listingType={q.ListingType}");
-            if (!string.IsNullOrWhiteSpace(q.FurnishingType)) parts.Add($"furnishingType={q.FurnishingType}");
-            if (q.MinBedrooms.HasValue) parts.Add($"minBedrooms={q.MinBedrooms}");
-            if (q.MinBathrooms.HasValue) parts.Add($"minBathrooms={q.MinBathrooms}");
-            if (!string.IsNullOrWhiteSpace(q.SortBy)) parts.Add($"sortBy={q.SortBy}");
-            parts.Add($"page={q.Page}");
-            parts.Add($"pageSize={q.PageSize}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.City))
+                parts.Add($"city={Uri.EscapeDataString(propertySearchQueryDto.City)}");
+            if (propertySearchQueryDto.MinPrice.HasValue) parts.Add($"minPrice={propertySearchQueryDto.MinPrice}");
+            if (propertySearchQueryDto.MaxPrice.HasValue) parts.Add($"maxPrice={propertySearchQueryDto.MaxPrice}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.BHKType)) parts.Add($"bhkType={propertySearchQueryDto.BHKType}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.PropertyType)) parts.Add($"propertyType={propertySearchQueryDto.PropertyType}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.ListingType)) parts.Add($"listingType={propertySearchQueryDto.ListingType}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.FurnishingType)) parts.Add($"furnishingType={propertySearchQueryDto.FurnishingType}");
+            if (propertySearchQueryDto.MinBedrooms.HasValue) parts.Add($"minBedrooms={propertySearchQueryDto.MinBedrooms}");
+            if (propertySearchQueryDto.MinBathrooms.HasValue) parts.Add($"minBathrooms={propertySearchQueryDto.MinBathrooms}");
+            if (!string.IsNullOrWhiteSpace(propertySearchQueryDto.SortBy)) parts.Add($"sortBy={propertySearchQueryDto.SortBy}");
+            parts.Add($"page={propertySearchQueryDto.Page}");
+            parts.Add($"pageSize={propertySearchQueryDto.PageSize}");
             return string.Join("&", parts);
         }
 

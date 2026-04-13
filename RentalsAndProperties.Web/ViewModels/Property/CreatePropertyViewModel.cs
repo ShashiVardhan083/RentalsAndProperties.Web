@@ -30,7 +30,7 @@ namespace RentalsAndProperties.Web.ViewModels.Property
         [Required(ErrorMessage = "Price is required.")]
         [Range(1, 99999999)]
         [Display(Name = "Price")]
-        public decimal Price { get; set; }
+        public decimal? Price { get; set; }
 
         [Range(0, 99999999)]
         [Display(Name = "Security Deposit")]

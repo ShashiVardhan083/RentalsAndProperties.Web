@@ -4,9 +4,6 @@
 }
 
 <div class="auth-page">
-    <div class="hero-orb orb-1" aria-hidden="true"></div>
-    <div class="hero-orb orb-2" aria-hidden="true"></div>
-
     <div class="auth-card" style="max-width:520px;" role="main">
 
         <div class="auth-logo">
@@ -17,22 +14,18 @@
             </p>
         </div>
 
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-error">
-                <span>⚠</span>
-                <div>
-                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                    {
-                        <div>@error.ErrorMessage</div>
-                    }
-                </div>
-            </div>
-        }
+         @Html.ValidationSummary(true, "", new { @class = "alert alert-error" })
+        <form asp-action="ApproveRejectProperty"
+              asp-controller="Admin"
+              method="post"
+              id="rejectForm"
+              novalidate>
 
-        <form asp-action="Reject" asp-controller="Admin" asp-route-id="@Model.PropertyId"
-              method="post" id="rejectForm" novalidate>
             @Html.AntiForgeryToken()
+
+            <input type="hidden" asp-for="PropertyId" name="id" />
+
+            <input type="hidden" name="isApproved" value="false" />
 
             <div class="form-group">
                 <textarea asp-for="Reason"
@@ -44,6 +37,7 @@
                           data-required="true"
                           data-required-msg="Please provide a rejection reason."
                           minlength="10"></textarea>
+
                 <label for="Reason" class="form-label">Rejection Reason</label>
                 <span asp-validation-for="Reason" class="invalid-feedback"></span>
             </div>
@@ -54,11 +48,10 @@
             </div>
 
             <div class="flex gap-3">
-                <a href="/Admin" class="btn btn-secondary" style="flex:1;text-align:center;">
+                <a href="/Admin/Index" class="btn btn-secondary" style="flex:1;text-align:center;">
                     ← Cancel
                 </a>
-                <button type="submit" class="btn btn-danger btn-lg" id="rejectBtn"
-                        style="flex:1;" onclick="return confirmReject()">
+                <button type="submit" class="btn btn-danger btn-lg" id="rejectBtn">
                     <span class="btn-text">❌ Reject Property</span>
                     <span class="btn-spinner"></span>
                 </button>
@@ -66,7 +59,199 @@
         </form>
     </div>
 </div>
+@section HeadStyles {
+    <style>
 
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.25;
+            z-index: 0;
+        }
+
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 520px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .auth-logo {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .auth-logo-icon {
+            width: 55px;
+            height: 55px;
+            margin: 0 auto 10px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg,#ef4444,#dc2626);
+        }
+
+        .auth-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .auth-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .form-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 10px;
+            background: transparent;
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            color: var(--text-primary);
+            resize: none;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+            .form-control:focus {
+                border-color: var(--accent-1);
+            }
+
+        .form-label {
+            position: absolute;
+            left: 10px;
+            top: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            pointer-events: none;
+            transition: 0.2s ease;
+        }
+
+        .form-control:focus + .form-label,
+        .form-control:not(:placeholder-shown) + .form-label {
+            top: -8px;
+            left: 8px;
+            font-size: 0.7rem;
+            background: var(--bg-card);
+            padding: 0 4px;
+        }
+
+        .invalid-feedback {
+            font-size: 0.75rem;
+            color: #ef4444;
+            margin-top: 4px;
+        }
+
+        .alert {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.85rem;
+        }
+
+        .alert-error {
+            background: #7f1d1d;
+            color: #fecaca;
+        }
+
+        .alert-info {
+            background: #1e3a8a;
+            color: #bfdbfe;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .gap-3 {
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            text-decoration: none;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            transition: 0.2s;
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: #e2e8f0;
+        }
+
+            .btn-secondary:hover {
+                background: #475569;
+            }
+
+        .btn-danger {
+            background: #ef4444;
+            color: #fff;
+            position: relative;
+        }
+
+            .btn-danger:hover {
+                background: #dc2626;
+            }
+
+        .btn-lg {
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .btn-spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-left: 8px;
+        }
+
+        .btn.loading .btn-text {
+            opacity: 0.6;
+        }
+
+        .btn.loading .btn-spinner {
+            display: inline-block;
+        }
+
+    </style>
+}
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -81,12 +266,15 @@
                     Toast.error('Rejection reason must be at least 10 characters.');
                     return;
                 }
-                setButtonLoading(btn, true);
+                if (!confirm('Are you sure you want to reject this property?')) {
+                    e.preventDefault();
+                    return;
+                }
+                btn.disabled = true;
+                btn.querySelector('.btn-text').style.opacity = '0.6';
+                btn.querySelector('.btn-spinner').style.display = 'inline-block';
             });
         });
 
-        function confirmReject() {
-            return confirm('Are you sure you want to reject this property?');
-        }
     </script>
 }

@@ -24,6 +24,7 @@ namespace RentalsAndProperties.Web.Services
         public async Task<ApiResponseModel<ReportResponseDto>?> CreateReportAsync(
             string targetType,
             Guid targetId,
+            string? targetTitle,
             string reason,
             string? description)
         {
@@ -31,6 +32,7 @@ namespace RentalsAndProperties.Web.Services
             {
                 TargetType = targetType,
                 TargetId = targetId,
+                TargetTitle= targetTitle ?? string.Empty,
                 Reason = reason,
                 Description = description
             };
@@ -79,14 +81,15 @@ namespace RentalsAndProperties.Web.Services
 
         private async Task<ApiResponseModel<T>?> ReadAsync<T>(HttpResponseMessage response)
         {
+            var body = await response.Content.ReadAsStringAsync();
+
             try
             {
-                var body = await response.Content.ReadAsStringAsync();
-
                 return JsonSerializer.Deserialize<ApiResponseModel<T>>(body, Opts);
             }
             catch (Exception ex)
             {
+                Console.WriteLine("RAW RESPONSE: " + body);
                 Logger.LogError(ex, "Report API error");
 
                 return new ApiResponseModel<T>

@@ -1,8 +1,6 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
-using RentalsAndProperties.Web.Helpers;
-using RentalsAndProperties.Web.Models.Dtos;
+using RentalsAndProperties.Web.Mappings;
 using RentalsAndProperties.Web.Services;
 using RentalsAndProperties.Web.ViewModels.Transaction;
 
@@ -24,57 +22,62 @@ namespace RentalsAndProperties.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Initiate(Guid propertyId)
         {
+
+            
             var result = await PropertyApi.GetDetailsAsync(propertyId);
             if (result == null || !result.Success || result.Data == null)
             {
                 TempData["Error"] = "Property not found.";
                 return RedirectToAction("Browse", "Property");
             }
-
-            var prop = result.Data;
+            var property = result.Data;
 
             // Owner cannot transact on their own property
             var userName = User.Identity?.Name;
 
-            var roles = User.Claims
-                .Where(c => c.Type == ClaimTypes.Role)
-                .Select(c => c.Value)
-                .ToList();
 
-            var vm = new TransactionViewModel
+            if (!string.IsNullOrEmpty(userName) &&
+                    userName.Equals(property.OwnerName, StringComparison.OrdinalIgnoreCase))
             {
-                PropertyId = prop.PropertyId,
-                PropertyTitle = prop.Title,
-                PropertyCity = prop.City,
-                PropertyPrice = prop.Price,
-                PropertyType = prop.PropertyType,
-                ListingType = prop.ListingType,
-                BHKType = prop.BHKType,
-                OwnerName = prop.OwnerName,
-                OwnerTrustScore = prop.OwnerTrustScore,
-                TransactionType = prop.ListingType == "Sale" ? "Sale" : "Rent"
+                TempData["Error"] = "You cannot initiate a transaction on your own property.";
+                return RedirectToAction("Details", "Property", new { id = propertyId });
+            }
+
+            var transactionViewModel = new TransactionViewModel
+            {
+                PropertyId = property.PropertyId,
+                PropertyTitle = property.Title,
+                PropertyCity = property.City,
+                PropertyPrice = property.Price,
+                PropertyType = property.PropertyType,
+                ListingType = property.ListingType,
+                BHKType = property.BHKType,
+                OwnerName = property.OwnerName,
+                TransactionType = property.ListingType == "Sale" ? "Sale" : "Rent"
             };
 
-            return View(vm);
+            return View(transactionViewModel);
         }
 
         // POST /Transaction/Initiate
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Initiate(TransactionViewModel vm)
+        public async Task<IActionResult> Initiate(TransactionViewModel transactionViewModel)
         {
-            if (!ModelState.IsValid)
-                return View(vm);
 
-            var result = await TransactionApi.CreateAsync(vm);
+            if (!ModelState.IsValid)
+                return View(transactionViewModel);
+
+            var createTransactionRequestDto = TransactionMapper.ToCreateDto(transactionViewModel);
+            var result = await TransactionApi.CreateAsync(createTransactionRequestDto);
 
             if (result == null || !result.Success)
             {
                 ModelState.AddModelError("", result?.Message ?? "Transaction failed. Please try again.");
-                return View(vm);
+                return View(transactionViewModel);
             }
 
-            TempData["ToastSuccess"] = vm.PaymentMethod == "Online"
+            TempData["ToastSuccess"] = transactionViewModel.PaymentMethod == "Online"
                 ? " Payment successful! Transaction completed."
                 : " Transaction initiated. Waiting for owner confirmation.";
 
@@ -87,40 +90,14 @@ namespace RentalsAndProperties.Web.Controllers
         {
             var result = await TransactionApi.GetMyTransactionsAsync();
 
-            if (TempData["ToastSuccess"] is string msg)
-                ViewBag.Success = msg;
-
             if (result == null || !result.Success || result.Data == null)
             {
                 ViewBag.Error = result?.Message ?? "Failed to load transactions.";
                 return View(new List<TransactionViewModel>());
             }
 
-            var vm = result.Data.Select(t => new TransactionViewModel
-            {
-                // Transaction details
-                TransactionId = t.TransactionId,
-                Amount = t.Amount,
-                PaymentStatus = t.PaymentStatus,
-                TransactionStatus = t.TransactionStatus,
-                CreatedAt = t.CreatedAt,
-                CompletedAt = t.CompletedAt,
-                CustomerConfirmed = t.CustomerConfirmed,
-                OwnerConfirmed = t.OwnerConfirmed,
-                HasReview = t.HasReview,
-                CustomerName = t.CustomerName,
-
-                // Property details
-                PropertyId = t.PropertyId,
-                PropertyTitle = t.PropertyTitle,
-                PropertyCity = t.PropertyCity,
-                OwnerName = t.OwnerName,
-
-                PropertyPrice = t.Amount,
-                TransactionType = t.TransactionType
-            }).ToList();
-
-            return View(vm);
+            var transactionViewModel = TransactionMapper.ToViewModel(result.Data);
+            return View(transactionViewModel);
         }
 
         // POST /Transaction/Confirm/{id}

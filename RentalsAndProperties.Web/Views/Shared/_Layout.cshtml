@@ -1,6 +1,4 @@
-﻿@using RentalsAndProperties.Web.Helpers
-
-@{
+﻿@{
     var isAuthenticated = User?.Identity?.IsAuthenticated ?? false;
     var fullName = User?.Identity?.Name ?? "";
 
@@ -21,6 +19,7 @@
 
     var welcomeMsg = TempData["WelcomeMessage"]?.ToString();
     var successMsg = TempData["ToastSuccess"]?.ToString();
+
     var currentPath = Context.Request.Path.ToString();
 }
 
@@ -240,6 +239,12 @@
                         My Deals
                     </a>
                 </li>
+                <li>
+                    <a asp-controller="Report" asp-action="MyReports"
+                       class="nav-link @(currentPath.StartsWith("/Report") ? "active" : "")">
+                        My Reports
+                    </a>
+                </li>
 
                 @if (isOwnerOrAdmin)
                 {
@@ -255,7 +260,7 @@
                 {
                     <li>
                         <a asp-controller="Admin" asp-action="Index"
-                           class="nav-link @(currentPath.StartsWith("/Admin") ? "active" : "")"
+                           class="nav-link @(currentPath.StartsWith("/Admin/Index") ? "active" : "")"
                            style="color:#f59e0b;">
                             🛡 Property Approvals
                         </a>
@@ -350,8 +355,45 @@
     <main id="main-content">
         @RenderBody()
     </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script> @*These 3 scripts enable automatic validation from ViewModel*@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/4.0.0/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        const Toast = {
+            show(msg, color) {
+                const el = document.createElement('div');
+                el.textContent = msg;
+                Object.assign(el.style, {
+                    position: 'fixed', bottom: '1.5rem', right: '1.5rem',
+                    background: color, color: '#fff', padding: '0.8rem 1.2rem',
+                    borderRadius: '8px', zIndex: 9999, fontSize: '0.9rem',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
+                });
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 3500);
+            },
+            success(msg) { this.show(msg, '#10b981'); },
+            error(msg)   { this.show(msg, '#ef4444'); }
+        };
 
-
+        const Validator = {
+            attachLiveValidation(form) {
+                form.querySelectorAll('[data-required]').forEach(field => {
+                    field.addEventListener('blur', () => {
+                        const msg = field.dataset.requiredMsg || 'This field is required.';
+                        const feedback = field.nextElementSibling;
+                        if (!field.value.trim()) {
+                            field.style.borderColor = '#ef4444';
+                            if (feedback) feedback.textContent = msg;
+                        } else {
+                            field.style.borderColor = '';
+                            if (feedback) feedback.textContent = '';
+                        }
+                    });
+                });
+            }
+        };
+    </script>
     @RenderSection("Scripts", required: false)
 
     <script>
@@ -391,9 +433,9 @@
                     menu.classList.remove('show');
                 });
             }
-
         });
+        
     </script>
-
+   
 </body>
 </html>

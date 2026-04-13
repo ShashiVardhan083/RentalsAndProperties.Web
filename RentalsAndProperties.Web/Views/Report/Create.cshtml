@@ -1,31 +1,45 @@
 ﻿@model RentalsAndProperties.Web.ViewModels.Report.CreateReportViewModel
+
 @{
     ViewData["Title"] = "Submit Report";
 }
 
 <div class="form-page" style="padding-top:88px;min-height:100vh;">
+
+    <!-- HEADER -->
     <div class="form-page-header">
         <div class="form-page-header-inner">
-            <a href="javascript:history.back()" class="back-link">← Back</a>
             <h1 class="form-page-title">Submit a Report</h1>
             <p class="form-page-subtitle">Help us keep the platform safe and trustworthy.</p>
         </div>
     </div>
 
+    <!-- BODY -->
     <div class="form-page-body">
-        <form asp-action="Create" asp-controller="Report" method="post" id="reportForm">
-            @Html.AntiForgeryToken()
-            <input type="hidden" asp-for="TargetType" />
-            <input type="hidden" asp-for="TargetId" />
 
+        <form asp-action="Create"
+              asp-controller="Report"
+              method="post"
+              id="reportForm">
+
+            @Html.AntiForgeryToken()
+
+            <!-- Hidden Fields -->
+            @Html.HiddenFor(m => m.TargetType)
+            @Html.HiddenFor(m => m.TargetId)
+            @Html.HiddenFor(m=> m.TargetTitle)
+
+            <!-- Error -->
             @if (!string.IsNullOrEmpty(ViewBag.Error?.ToString()))
             {
                 <div class="alert alert-error">⚠ @ViewBag.Error</div>
             }
 
             <div class="form-section" style="max-width:600px;margin:0 auto;">
+
                 <h2 class="form-section-title">📋 Report Details</h2>
 
+                <!-- Target Info -->
                 @if (!string.IsNullOrEmpty(Model.TargetTitle))
                 {
                     <div class="report-target-info">
@@ -35,9 +49,12 @@
                     </div>
                 }
 
+                <!-- Reason -->
                 <div class="form-group">
-                    <label class="form-label form-label-select">Reason for Report</label>
-                    <select asp-for="Reason" class="form-control form-select" required>
+                    @Html.LabelFor(m => m.Reason, "Reason for Report", new { @class = "form-label" })
+
+                    <select asp-for="Reason" class="form-control form-select"> @* required *@
+                        
                         <option value="">Select a reason…</option>
                         <option value="Spam">Spam or misleading content</option>
                         <option value="FakeProperty">Fake or fraudulent property</option>
@@ -46,58 +63,262 @@
                         <option value="Scam">Scam or financial fraud</option>
                         <option value="Other">Other</option>
                     </select>
-                    <span asp-validation-for="Reason" class="invalid-feedback"></span>
+
+                    @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "invalid-feedback" })
                 </div>
 
+                <!-- Description -->
                 <div class="form-group">
-                    <label asp-for="Description" class="form-label">Additional Details (optional)</label>
-                    <textarea asp-for="Description" class="form-control textarea" rows="4"
-                              placeholder="Provide more context about this report…"></textarea>
-                    <span asp-validation-for="Description" class="invalid-feedback"></span>
+                    @Html.LabelFor(m => m.Description, new { @class = "form-label" })
+
+                    @Html.TextAreaFor(m => m.Description, new
+                    {
+                        @class = "form-control textarea",
+                                        rows = 4,
+                                        placeholder = "Provide more context about this report…"
+                                        })
+
+                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "invalid-feedback" })
                 </div>
+
             </div>
 
+            <!-- SUBMIT -->
             <div class="form-submit-bar" style="max-width:600px;margin:2rem auto 0;">
                 <a href="javascript:history.back()" class="btn btn-secondary">Cancel</a>
                 <button type="submit" class="btn btn-primary">
                     🚩 Submit Report
                 </button>
             </div>
+
         </form>
     </div>
 </div>
 
 @section HeadStyles {
     <style>
+        
+        .form-page {
+            max-width: 900px;
+            margin: auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        
+        .form-page-header {
+            margin-bottom: 20px;
+        }
+
+        .form-page-header-inner {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-page-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .form-page-subtitle {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .form-page-body {
+            margin-top: 10px;
+        }
+
+        .form-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: #ffffff;
+            padding: 20px;
+        }
+
+        .form-section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #111827;
+        }
+
         .report-target-info {
             display: flex;
             align-items: center;
-            gap: .6rem;
-            padding: .85rem 1rem;
-            background: rgba(99,102,241,.06);
-            border: 1px solid rgba(99,102,241,.15);
-            border-radius: var(--radius-md);
+            gap: 0.6rem;
+            padding: 0.85rem 1rem;
+            background: rgba(99, 102, 241, 0.06);
+            border: 1px solid rgba(99, 102, 241, 0.15);
+            border-radius: 6px;
             margin-bottom: 1.5rem;
-            font-size: .88rem;
+            font-size: 0.88rem;
         }
 
         .report-target-label {
-            color: var(--text-muted);
+            color: #6b7280;
         }
 
         .report-target-type {
-            padding: .2rem .55rem;
-            background: rgba(108,99,255,.15);
+            padding: 0.2rem 0.55rem;
+            background: rgba(108, 99, 255, 0.15);
             color: #a78bfa;
             border-radius: 100px;
-            font-size: .72rem;
+            font-size: 0.72rem;
             font-weight: 700;
             text-transform: uppercase;
         }
 
         .report-target-name {
             font-weight: 600;
-            color: var(--text-primary);
+            color: #111827;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            margin-bottom: 6px;
+            color: #111827;
+            font-weight: 600;
+        }
+
+
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            font-size: 14px;
+        }
+
+        .form-select {
+            cursor: pointer;
+        }
+
+        .textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .invalid-feedback {
+            color: red;
+            font-size: 12px;
+            display: block; /*new line always*/
+            margin-top: 4px;
+        }
+
+        .alert {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #1d4ed8;
+            }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: black;
+        }
+
+            .btn-secondary:hover {
+                background: #d1d5db;
+            }
+
+        .form-submit-bar {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
         }
     </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            var form = document.getElementById('reportForm');
+            var reason = document.querySelector('[name="Reason"]');
+            var description = document.querySelector('[name="Description"]');
+            var submitBtn = form.querySelector('button[type="submit"]');
+
+            if (description) {
+                var counter = document.createElement('div');
+                counter.style.fontSize = "12px";
+                counter.style.color = "#777";
+                counter.style.textAlign = "right";
+                counter.style.marginTop = "4px";
+
+                description.parentNode.appendChild(counter);
+
+                function updateCount() {
+                    counter.textContent = description.value.length + " / 1000";
+                }
+
+                updateCount(); //initial count->0
+
+                description.addEventListener('input', function () {
+                    updateCount();
+                });
+            }
+
+           form.addEventListener('submit', function (e) {
+
+            let isValid = true;
+
+            if (!reason.value || reason.value.trim() === "") {
+                isValid = false;
+                alert("Please select a reason for the report.");
+                reason.focus();
+            }
+
+            if (!description.value || description.value.trim() === "") {
+                isValid = false;
+                alert("Description is required.");
+                description.focus();
+            }
+
+            if (!isValid) {
+                e.preventDefault(); 
+                return;
+            }
+
+            // ONLY disable when everything is valid
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = "Submitting...";
+            }
+        });
+
+        });
+    </script>
 }

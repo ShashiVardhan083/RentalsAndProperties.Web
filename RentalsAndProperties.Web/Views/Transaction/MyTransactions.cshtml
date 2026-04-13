@@ -1,473 +1,534 @@
-﻿@model List<RentalsAndProperties.Web.ViewModels.Transaction.TransactionViewModel>
-@using RentalsAndProperties.Web.Helpers
+﻿@model IEnumerable<RentalsAndProperties.Web.ViewModels.Transaction.TransactionViewModel>
+
 @{
     ViewData["Title"] = "My Transactions";
-    var userId = Context.Session.GetString("UserId") ?? "";
 }
 
 <div class="mytx-page">
+
+    <!-- HERO -->
     <div class="mytx-hero">
-        <div class="hero-orb orb-1" aria-hidden="true"></div>
-        <div class="hero-orb orb-2" aria-hidden="true"></div>
         <div class="mytx-hero-inner">
-            <h1 class="mytx-hero-title">My <span class="gradient-text">Transactions</span></h1>
-            <p class="mytx-hero-sub">Track all your property deals in one place.</p>
+            <h1 class="mytx-hero-title">
+                My Transactions
+            </h1>
+            <p class="mytx-hero-sub">
+                Track all your property deals in one place.
+            </p>
         </div>
     </div>
 
     <div class="mytx-body">
-        @if (!string.IsNullOrEmpty(ViewBag.Success?.ToString()))
+
+        <!-- SUCCESS MESSAGE -->
+        @if (!string.IsNullOrWhiteSpace(ViewBag.Success as string))
         {
-            <div class="alert alert-success mb-3">✓ @ViewBag.Success</div>
+            <div class="alert alert-success mb-3">
+                ✓ @ViewBag.Success
+            </div>
         }
 
-        @if (Model == null || Model.Count == 0)
+        <!-- EMPTY STATE -->
+        @if (Model == null || !Model.Any())
         {
             <div class="mytx-empty">
                 <div class="mytx-empty-icon">📋</div>
                 <h3>No Transactions Yet</h3>
                 <p>When you initiate or confirm a deal, it will appear here.</p>
-                <a href="/Property/Browse" class="btn btn-primary mt-3">Browse Properties →</a>
-            </div>
-        }
+
+                @Html.ActionLink(
+                "Browse Properties →",
+                        "Browse",
+                        "Property",
+                        null,
+                        new { @class = "btn btn-primary mt-3" }
+                        )
+        </div>
+                }
         else
         {
-            <!-- Stats Strip -->
+            <!-- STATS -->
             <div class="mytx-stats">
                 <div class="mytx-stat">
-                    <span class="mytx-stat-num">@Model.Count</span>
+                    <span class="mytx-stat-num">@Model.Count()</span>
                     <span class="mytx-stat-label">Total</span>
                 </div>
+
                 <div class="mytx-stat">
-                    <span class="mytx-stat-num text-green">@Model.Count(t => t.TransactionStatus == "Completed")</span>
+                    <span class="mytx-stat-num text-green">
+                        @Model.Count(t => t.TransactionStatus == "Completed")
+                    </span>
                     <span class="mytx-stat-label">Completed</span>
                 </div>
+
                 <div class="mytx-stat">
-                    <span class="mytx-stat-num text-orange">@Model.Count(t => t.TransactionStatus == "Pending")</span>
+                    <span class="mytx-stat-num text-orange">
+                        @Model.Count(t => t.TransactionStatus == "Pending")
+                    </span>
                     <span class="mytx-stat-label">Pending</span>
                 </div>
             </div>
 
+            <!-- LIST -->
             <div class="mytx-list">
+
                 @foreach (var tx in Model)
                 {
                     var isCompleted = tx.TransactionStatus == "Completed";
                     var isPending = tx.TransactionStatus == "Pending";
 
                     <div class="mytx-card @(isCompleted ? "tx-completed" : "") @(isPending ? "tx-pending" : "")">
+
+                        <!-- TOP -->
                         <div class="mytx-card-top">
-                            <!-- Property info -->
+
                             <div class="mytx-prop">
                                 <div class="mytx-prop-icon">🏠</div>
                                 <div>
-                                    <div class="mytx-prop-title">@tx.PropertyTitle</div>
-                                    <div class="mytx-prop-meta">📍 @tx.PropertyCity</div>
+                                    <div class="mytx-prop-title">
+                                        @tx.PropertyTitle
+                                    </div>
+                                    <div class="mytx-prop-meta">
+                                        📍 @tx.PropertyCity
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Status badge -->
                             <div class="mytx-status-wrap">
                                 <span class="tx-status-badge tx-status-@tx.TransactionStatus.ToLower()">
                                     @tx.TransactionStatus
                                 </span>
+
                                 <span class="tx-type-badge tx-type-@tx.TransactionType.ToLower()">
                                     @tx.TransactionType
                                 </span>
                             </div>
                         </div>
 
+                        <!-- BODY -->
                         <div class="mytx-card-body">
+
                             <div class="mytx-detail-grid">
+
                                 <div class="mytx-detail">
                                     <span class="mytx-detail-label">Amount</span>
-                                    <span class="mytx-detail-value tx-amount-val">₹@tx.Amount.ToString("N0")</span>
+                                    <span class="mytx-detail-value1 tx-amount-val1">
+                                        ₹@tx.Amount.ToString("N0")
+                                    </span>
                                 </div>
+
                                 <div class="mytx-detail">
                                     <span class="mytx-detail-label">Payment</span>
-                                    <span class="mytx-detail-value">@tx.PaymentStatus</span>
+                                    <span class="mytx-detail-value">
+                                        @tx.PaymentStatus
+                                    </span>
                                 </div>
+
                                 <div class="mytx-detail">
                                     <span class="mytx-detail-label">Owner</span>
-                                    <span class="mytx-detail-value">@tx.OwnerName</span>
+                                    <span class="mytx-detail-value">
+                                        @tx.OwnerName
+                                    </span>
                                 </div>
+
                                 <div class="mytx-detail">
                                     <span class="mytx-detail-label">Customer</span>
-                                    <span class="mytx-detail-value">@tx.CustomerName</span>
+                                    <span class="mytx-detail-value">
+                                        @tx.CustomerName
+                                    </span>
                                 </div>
+
                                 <div class="mytx-detail">
                                     <span class="mytx-detail-label">Created</span>
-                                    <span class="mytx-detail-value">@tx.CreatedAt.ToString("MMM dd, yyyy")</span>
+                                    <span class="mytx-detail-value">
+                                        @tx.CreatedAt.ToString("MMM dd, yyyy")
+                                    </span>
                                 </div>
+
                                 @if (tx.CompletedAt.HasValue)
                                 {
                                     <div class="mytx-detail">
                                         <span class="mytx-detail-label">Completed</span>
-                                        <span class="mytx-detail-value text-green">@tx.CompletedAt.Value.ToString("MMM dd, yyyy")</span>
+                                        <span class="mytx-detail-value text-green">
+                                            @tx.CompletedAt.Value.ToString("MMM dd, yyyy")
+                                        </span>
                                     </div>
                                 }
                             </div>
 
-                            <!-- Confirmation progress (offline deals) -->
+                            <!-- CONFIRMATION -->
                             @if (isPending)
                             {
                                 <div class="tx-confirm-progress">
                                     <div class="tx-confirm-label">Confirmation Progress</div>
+
                                     <div class="tx-confirm-steps">
+
                                         <div class="tx-confirm-step @(tx.CustomerConfirmed ? "done" : "")">
                                             <span class="step-dot"></span>
-                                            <span>Customer @(tx.CustomerConfirmed ? "✓ Confirmed" : "Pending")</span>
+                                            <span> 
+                                                Customer @(tx.CustomerConfirmed ? "✓ Confirmed" : "Pending")
+                                            </span>
                                         </div>
+
                                         <div class="tx-confirm-divider"></div>
+
                                         <div class="tx-confirm-step @(tx.OwnerConfirmed ? "done" : "")">
                                             <span class="step-dot"></span>
-                                            <span>Owner @(tx.OwnerConfirmed ? "✓ Confirmed" : "Pending")</span>
+                                            <span>
+                                                Owner @(tx.OwnerConfirmed ? "✓ Confirmed" : "Pending")
+                                            </span>
                                         </div>
+
                                     </div>
                                 </div>
                             }
+
                         </div>
 
-                        <!-- Actions -->
+                        <!-- FOOTER -->
                         <div class="mytx-card-footer">
+
                             @if (isPending)
                             {
-                                <form asp-action="Confirm" asp-controller="Transaction"
-                                      asp-route-id="@tx.TransactionId" method="post"
-                                      onsubmit="return confirm('Confirm this transaction?')">
+                                @using (Html.BeginForm(
+                                                    "Confirm",
+                                                    "Transaction",
+                                                    new { id = tx.TransactionId },
+                                                    FormMethod.Post,
+                                                    true, //  antiforgery required
+                                                    new { onsubmit = "return confirmTx();" }
+                                                    ))
+                                {
                                     @Html.AntiForgeryToken()
+
                                     <button type="submit" class="btn btn-primary btn-sm">
                                         ✅ Confirm My Part
                                     </button>
-                                </form>
+                                }
                             }
 
                             @if (isCompleted && !tx.HasReview)
                             {
-                                <a href="/Review/Create?propertyId=@tx.PropertyId&reviewType=Transaction&transactionId=@tx.TransactionId"
-                                   class="btn btn-secondary btn-sm">
-                                    ⭐ Leave Review
-                                </a>
-                            }
+                                @Html.ActionLink(
+                                "⭐ Leave Review",
+                                        "Create",
+                                        "Review",
+                                        new
+                                        {
+                                            propertyId = tx.PropertyId,
+                                            reviewType = "Transaction",
+                                            transactionId = tx.TransactionId
+                                        },
+                                        new { @class = "btn btn-secondary btn-sm" }
+                                        )
+                                        }
 
-                            <a href="/Property/Details/@tx.PropertyId" class="btn btn-ghost btn-sm">
-                                👁 View Property
-                            </a>
-                        </div>
-                    </div>
-                }
+                            @Html.ActionLink(
+                            "👁 View Property",
+                                        "Details",
+                                        "Property",
+                                        new { id = tx.PropertyId },
+                                        new { @class = "btn btn-ghost btn-sm"  }
+                                        )
+
+                </div>
+            </div>
+                        }
+
             </div>
         }
+
     </div>
 </div>
 
-@section HeadStyles {
-    <style>
-        .mytx-page {
-            padding-top: 68px;
-            min-height: 100vh;
+@section Scripts {
+    <script>
+        function confirmTx() {
+            return confirm("Confirm this transaction?");
         }
-
-        .mytx-hero {
-            position: relative;
-            background: var(--gradient-hero);
-            overflow: hidden;
-            padding: 3rem 2rem 2.5rem;
-        }
-
-        .mytx-hero-inner {
-            max-width: 960px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
-        }
-
-        .mytx-hero-title {
-            font-size: clamp(1.6rem,4vw,2.5rem);
-            font-weight: 800;
-        }
-
-        .mytx-hero-sub {
-            color: var(--text-secondary);
-            margin-top: .35rem;
-        }
-
-        .mytx-body {
-            max-width: 960px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .mytx-stats {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.75rem;
-            flex-wrap: wrap;
-        }
-
-        .mytx-stat {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-md);
-            padding: 1rem 1.5rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-width: 100px;
-        }
-
-        .mytx-stat-num {
-            font-family: 'Syne',sans-serif;
-            font-size: 1.8rem;
-            font-weight: 800;
-        }
-
-        .mytx-stat-label {
-            font-size: .75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-top: .15rem;
-        }
-
-        .text-green {
-            color: #43e97b;
-        }
-
-        .text-orange {
-            color: #f59e0b;
-        }
-
-        .mytx-list {
-            display: flex;
-            flex-direction: column;
-            gap: 1.25rem;
-        }
-
-        .mytx-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: box-shadow .2s;
-        }
-
-            .mytx-card:hover {
-                box-shadow: var(--shadow-card);
-            }
-
-            .mytx-card.tx-completed {
-                border-left: 4px solid #43e97b;
-            }
-
-            .mytx-card.tx-pending {
-                border-left: 4px solid #f59e0b;
-            }
-
-        .mytx-card-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1.25rem 1.5rem 0;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-
-        .mytx-prop {
-            display: flex;
-            align-items: center;
-            gap: .85rem;
-        }
-
-        .mytx-prop-icon {
-            font-size: 1.8rem;
-        }
-
-        .mytx-prop-title {
-            font-weight: 700;
-            font-size: .95rem;
-        }
-
-        .mytx-prop-meta {
-            font-size: .8rem;
-            color: var(--text-muted);
-        }
-
-        .mytx-status-wrap {
-            display: flex;
-            gap: .5rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .tx-status-badge {
-            padding: .25rem .75rem;
-            border-radius: 100px;
-            font-size: .72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .tx-status-completed {
-            background: rgba(67,233,123,.15);
-            color: #43e97b;
-        }
-
-        .tx-status-pending {
-            background: rgba(247,151,30,.15);
-            color: #f59e0b;
-        }
-
-        .tx-status-cancelled {
-            background: rgba(239,68,68,.15);
-            color: #fca5a5;
-        }
-
-        .tx-status-paymentpending {
-            background: rgba(99,102,241,.15);
-            color: #a78bfa;
-        }
-
-        .tx-type-badge {
-            padding: .25rem .65rem;
-            border-radius: 100px;
-            font-size: .7rem;
-            font-weight: 600;
-            border: 1px solid;
-        }
-
-        .tx-type-rent {
-            background: rgba(67,233,123,.1);
-            border-color: rgba(67,233,123,.3);
-            color: #43e97b;
-        }
-
-        .tx-type-sale {
-            background: rgba(247,151,30,.1);
-            border-color: rgba(247,151,30,.3);
-            color: #f59e0b;
-        }
-
-        .mytx-card-body {
-            padding: 1rem 1.5rem;
-        }
-
-        .mytx-detail-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
-            gap: .75rem 1.5rem;
-        }
-
-        .mytx-detail {
-            display: flex;
-            flex-direction: column;
-            gap: .15rem;
-        }
-
-        .mytx-detail-label {
-            font-size: .72rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
-
-        .mytx-detail-value {
-            font-size: .875rem;
-            font-weight: 600;
-        }
-
-        .tx-amount-val {
-            background: var(--gradient-btn);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-family: 'Syne',sans-serif;
-            font-size: 1.05rem;
-        }
-
-        /* Confirmation progress */
-        .tx-confirm-progress {
-            margin-top: 1rem;
-            padding: 1rem;
-            background: rgba(247,151,30,.06);
-            border: 1px solid rgba(247,151,30,.15);
-            border-radius: var(--radius-md);
-        }
-
-        .tx-confirm-label {
-            font-size: .75rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: .04em;
-            margin-bottom: .65rem;
-        }
-
-        .tx-confirm-steps {
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-        }
-
-        .tx-confirm-step {
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-            font-size: .85rem;
-            color: var(--text-secondary);
-        }
-
-            .tx-confirm-step.done {
-                color: #43e97b;
-                font-weight: 600;
-            }
-
-        .step-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--border-subtle);
-            flex-shrink: 0;
-        }
-
-        .tx-confirm-step.done .step-dot {
-            background: #43e97b;
-            box-shadow: 0 0 6px rgba(67,233,123,.5);
-        }
-
-        .tx-confirm-divider {
-            flex: 1;
-            height: 2px;
-            background: var(--border-subtle);
-            min-width: 30px;
-        }
-
-        .mytx-card-footer {
-            padding: .85rem 1.5rem 1.25rem;
-            display: flex;
-            gap: .75rem;
-            flex-wrap: wrap;
-            align-items: center;
-            border-top: 1px solid var(--border-subtle);
-        }
-
-        .mytx-empty {
-            text-align: center;
-            padding: 5rem 2rem;
-        }
-
-        .mytx-empty-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-
-        .mytx-empty h3 {
-            font-size: 1.4rem;
-            margin-bottom: .5rem;
-        }
-
-        .mytx-empty p {
-            color: var(--text-secondary);
-        }
-    </style>
+    </script>
 }
+<style>
+    
+    .mytx-page {
+        padding-top: 70px;
+    }
+
+    .mytx-hero {
+        background: var(--gradient-hero);
+        padding: 3rem 2rem;
+    }
+
+    .mytx-hero-inner {
+        max-width: 1000px;
+        margin: auto;
+    }
+
+    .mytx-hero-title {
+        font-size: clamp(1.8rem, 4vw, 2.6rem);
+        font-weight: 800;
+    }
+
+    .mytx-hero-sub {
+        margin-top: 6px;
+        color: var(--text-secondary);
+    }
+
+    .mytx-body {
+        max-width: 1000px;
+        margin: auto;
+        padding: 2rem;
+    }
+
+    /* ===== STATS ===== */
+    .mytx-stats {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+    }
+
+    .mytx-stat {
+        flex: 1;
+        min-width: 120px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .mytx-stat-num {
+        font-size: 1.8rem;
+        font-weight: 800;
+    }
+
+    .mytx-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    /* COLORS */
+    .text-green { color: #22c55e; }
+    .text-orange { color: #f59e0b; }
+
+    /* ===== LIST ===== */
+    .mytx-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1.2rem;
+    }
+
+    /* ===== CARD ===== */
+    .mytx-card {
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-subtle);
+        transition: 0.2s;
+    }
+
+    .mytx-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .tx-completed {
+        border-left: 4px solid #22c55e;
+    }
+
+    .tx-pending {
+        border-left: 4px solid #f59e0b;
+    }
+
+    /* ===== CARD TOP ===== */
+    .mytx-card-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.2rem 1.5rem 0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .mytx-prop {
+        display: flex;
+        gap: 0.7rem;
+        align-items: center;
+    }
+
+    .mytx-prop-icon {
+        font-size: 1.6rem;
+    }
+
+    .mytx-prop-title {
+        font-weight: 700;
+    }
+
+    .mytx-prop-meta {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    /* ===== STATUS ===== */
+    .mytx-status-wrap {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .tx-status-badge {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .tx-status-completed {
+        background: rgba(34,197,94,0.15);
+        color: #22c55e;
+    }
+
+    .tx-status-pending {
+        background: rgba(245,158,11,0.15);
+        color: #f59e0b;
+    }
+
+    /* ===== TYPE ===== */
+    .tx-type-badge {
+        border-radius: 999px;
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border: 1px solid;
+    }
+
+    .tx-type-rent {
+        color: #22c55e;
+        border-color: #22c55e;
+    }
+
+    .tx-type-sale {
+        color: #f59e0b;
+        border-color: #f59e0b;
+    }
+
+    /* ===== BODY ===== */
+    .mytx-card-body {
+        padding: 1rem 1.5rem;
+    }
+
+    .mytx-detail-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1rem;
+    }
+
+    .mytx-detail-label {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    .mytx-detail-value {
+        font-weight: 600;
+    }
+
+    /* ===== AMOUNT ===== */
+    .tx-amount-val {
+        background: var(--gradient-btn);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* ===== CONFIRMATION ===== */
+    .tx-confirm-progress {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: rgba(245,158,11,0.08);
+        border-radius: var(--radius-md);
+    }
+
+    .tx-confirm-steps {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .tx-confirm-step {
+        display: flex;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+    }
+
+    .tx-confirm-step.done {
+        color: #22c55e;
+    }
+
+    .step-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: gray;
+    }
+
+    .tx-confirm-step.done .step-dot {
+        background: #22c55e;
+    }
+
+    .tx-confirm-divider {
+        flex: 1;
+        height: 2px;
+        background: #374151;
+    }
+
+    /* ===== FOOTER ===== */
+    .mytx-card-footer {
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--border-subtle);
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .btn-primary {
+        background: #6366f1;
+        color: white;
+        border: none;
+    }
+
+    .btn-secondary {
+        background: #374151;
+        color: white;
+    }
+
+    .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--border-subtle);
+        color: white;
+    }
+
+    /* ===== EMPTY ===== */
+    .mytx-empty {
+        text-align: center;
+        padding: 4rem 1rem;
+    }
+
+    .mytx-empty-icon {
+        font-size: 3rem;
+    }
+
+    .mytx-empty p {
+        color: var(--text-secondary);
+    }
+
+   .mytx-detail-value1 tx-amount-val1{
+       color 
+   }
+</style>

@@ -27,15 +27,12 @@
 
         public List<string> ImageUrls { get; set; } = new();
 
-        public int ImageCount => ImageUrls?.Count ?? 0;
 
         public string OwnerName { get; set; } = "";
 
         public double AverageRating { get; set; }
 
         public int ReviewCount { get; set; }
-
-        public double OwnerTrustScore { get; set; }
         public DateTime CreatedAt { get; set; }
         public string Status { get; set; } = "";
     }

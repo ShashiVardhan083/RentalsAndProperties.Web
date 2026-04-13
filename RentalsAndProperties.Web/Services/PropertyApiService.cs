@@ -1,9 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Http;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
-using RentalsAndProperties.Web.Models.Enums;
 using RentalsAndProperties.Web.ViewModels.Property;
 
 namespace RentalsAndProperties.Web.Services
@@ -75,7 +73,6 @@ namespace RentalsAndProperties.Web.Services
             var response = await HttpClient.GetAsync("api/property/owner");
             var result = await ReadAsync<List<PropertyResponseDto>>(response);
 
-            // ✅ Fix image URLs for dashboard thumbnails and image count
             if (result?.Data != null)
             {
                 foreach (var prop in result.Data)
@@ -91,27 +88,6 @@ namespace RentalsAndProperties.Web.Services
         }
 
         // Public/shared endpoints
-
-        public async Task<ApiResponseModel<PagedResultDto<PropertyResponseDto>>?> GetApprovedAsync(
-            int page = 1, int pageSize = 12)
-        {
-            var response = await HttpClient.GetAsync($"api/property/approved?page={page}&pageSize={pageSize}");
-            var result = await ReadAsync<PagedResultDto<PropertyResponseDto>>(response);
-
-            //image URLs for public listing cards
-            if (result?.Data?.Items != null)
-            {
-                foreach (var prop in result.Data.Items)
-                {
-                    prop.PrimaryImageUrl = ResolveImageUrl(prop.PrimaryImageUrl);
-                    prop.ImageUrls = prop.ImageUrls
-                        .Select(url => ResolveImageUrl(url))
-                        .ToList();
-                }
-            }
-
-            return result;
-        }
 
         public async Task<ApiResponseModel<PropertyDetailDto>?> GetDetailsAsync(Guid propertyId)
         {
@@ -153,48 +129,42 @@ namespace RentalsAndProperties.Web.Services
             return result;
         }
 
-        public async Task<ApiResponseModel<PropertyDetailDto>?> ApprovePropertyAsync(Guid propertyId)
+        public async Task<ApiResponseModel<PropertyDetailDto>?> ApproveRejectPropertyAsync(Guid propertyId, string? reason, Boolean isApproved)
         {
-            var response = await HttpClient.PostAsync($"api/admin/property/{propertyId}/approve", null);
-            return await ReadAsync<PropertyDetailDto>(response);
-        }
-
-        public async Task<ApiResponseModel<PropertyDetailDto>?> RejectPropertyAsync(Guid propertyId, string reason)
-        {
-            var payload = new { Reason = reason };
+            var payload = new { Reason = reason, IsApproved = isApproved };
             var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-            var response = await HttpClient.PostAsync($"api/admin/property/{propertyId}/reject", content);
+            var response = await HttpClient.PostAsync($"api/admin/property/{propertyId}/approve-reject",content);
             return await ReadAsync<PropertyDetailDto>(response);
         }
 
         // Multipart form builders
 
-        private static MultipartFormDataContent BuildMultipartForm(CreatePropertyViewModel m)
+        private static MultipartFormDataContent BuildMultipartForm(CreatePropertyViewModel createPropertyViewModel)
         {
             var form = new MultipartFormDataContent();
 
-            form.Add(new StringContent(m.Title ?? ""), "Title");
-            form.Add(new StringContent(m.Description ?? ""), "Description");
-            form.Add(new StringContent(m.City.ToString()), "City");
-            form.Add(new StringContent(m.Address ?? ""), "Address");
-            form.Add(new StringContent(m.Price.ToString()), "Price");
-            form.Add(new StringContent((m.SecurityDeposit ?? 0).ToString()), "SecurityDeposit");
-            form.Add(new StringContent(m.SquareFeet.ToString()), "SquareFeet");
-            form.Add(new StringContent(m.Bedrooms.ToString()), "Bedrooms");
-            form.Add(new StringContent(m.Bathrooms.ToString()), "Bathrooms");
-            form.Add(new StringContent(((int)m.PropertyType).ToString()), "PropertyType");
-            form.Add(new StringContent(((int)m.ListingType).ToString()), "ListingType");
-            form.Add(new StringContent(((int)m.BHKType).ToString()), "BHKType");
-            form.Add(new StringContent(((int)m.FurnishingType).ToString()), "FurnishingType");
-            form.Add(new StringContent(m.AvailableFrom.ToString("O")), "AvailableFrom");
+            form.Add(new StringContent(createPropertyViewModel.Title ?? ""), "Title");
+            form.Add(new StringContent(createPropertyViewModel.Description ?? ""), "Description");
+            form.Add(new StringContent((createPropertyViewModel.City ?? 0).ToString()), "City");
+            form.Add(new StringContent(createPropertyViewModel.Address ?? ""), "Address");
+            form.Add(new StringContent((createPropertyViewModel.Price ?? 0).ToString()), "Price");
+            form.Add(new StringContent((createPropertyViewModel.SecurityDeposit ?? 0).ToString()), "SecurityDeposit");
+            form.Add(new StringContent(createPropertyViewModel.SquareFeet.ToString()), "SquareFeet");
+            form.Add(new StringContent(createPropertyViewModel.Bedrooms.ToString()), "Bedrooms");
+            form.Add(new StringContent(createPropertyViewModel.Bathrooms.ToString()), "Bathrooms");
+            form.Add(new StringContent(((int)(createPropertyViewModel.PropertyType ?? 0)).ToString()), "PropertyType");
+            form.Add(new StringContent(((int)(createPropertyViewModel.ListingType ?? 0)).ToString()), "ListingType");
+            form.Add(new StringContent(((int)(createPropertyViewModel.BHKType ?? 0)).ToString()), "BHKType");
+            form.Add(new StringContent(((int)(createPropertyViewModel.FurnishingType ?? 0)).ToString()), "FurnishingType");
+            form.Add(new StringContent(createPropertyViewModel.AvailableFrom.ToString("O")), "AvailableFrom");
 
-            if (m.Images != null)
+            if (createPropertyViewModel.Images != null)
             {
-                foreach (var img in m.Images.Where(i => i?.Length > 0))
+                foreach (var img in createPropertyViewModel.Images.Where(i => i.Length > 0))
                 {
-                    var stream = img.OpenReadStream();
-                    var sc = new StreamContent(stream);
-                    sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(img.ContentType);
+                    var stream = img.OpenReadStream();//Reads the file from memory/request->Converts it into a stream(binary data)
+                    var sc = new StreamContent(stream);//Converts the stream into something HTTP can send
+                    sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(img.ContentType);//Server needs to know what type of file this is
                     form.Add(sc, "Images", img.FileName);
                 }
             }
@@ -202,37 +172,33 @@ namespace RentalsAndProperties.Web.Services
             return form;
         }
 
-        private static MultipartFormDataContent BuildMultipartFormForEdit(EditPropertyViewModel m)
+        private static MultipartFormDataContent BuildMultipartFormForEdit(EditPropertyViewModel editPropertyViewModel)
         {
             var form = new MultipartFormDataContent();
 
-            form.Add(new StringContent(m.Title ?? ""), "Title");
-            form.Add(new StringContent(m.Description ?? ""), "Description");
-            form.Add(new StringContent(
-                m.City.HasValue 
-                ? CityDetailsEnum.GetName(m.City.Value) 
-                : ""
-                ), "City");
-            form.Add(new StringContent(m.Pincode ?? ""), "Pincode");
-            form.Add(new StringContent(m.Address ?? ""), "Address");
-            form.Add(new StringContent(m.Price.ToString()), "Price");
-            form.Add(new StringContent((m.SecurityDeposit ?? 0).ToString()), "SecurityDeposit");
-            form.Add(new StringContent(m.SquareFeet.ToString()), "SquareFeet");
-            form.Add(new StringContent(m.Bedrooms.ToString()), "Bedrooms");
-            form.Add(new StringContent(m.Bathrooms.ToString()), "Bathrooms");
-            form.Add(new StringContent(((int)m.PropertyType).ToString()), "PropertyType");
-            form.Add(new StringContent(((int)m.ListingType).ToString()), "ListingType");
-            form.Add(new StringContent(((int)m.BHKType).ToString()), "BHKType");
-            form.Add(new StringContent(((int)m.FurnishingType).ToString()), "FurnishingType");
-            form.Add(new StringContent(m.AvailableFrom.ToString("O")), "AvailableFrom");
+            form.Add(new StringContent(editPropertyViewModel.Title ?? ""), "Title");
+            form.Add(new StringContent(editPropertyViewModel.Description ?? ""), "Description");
+            form.Add(new StringContent(editPropertyViewModel.City.HasValue ? ((int)editPropertyViewModel.City.Value).ToString() : "" ), "City");
+            form.Add(new StringContent(editPropertyViewModel.Pincode ?? ""), "Pincode");
+            form.Add(new StringContent(editPropertyViewModel.Address ?? ""), "Address");
+            form.Add(new StringContent((editPropertyViewModel.Price ?? 0).ToString()), "Price");
+            form.Add(new StringContent((editPropertyViewModel.SecurityDeposit ?? 0).ToString()), "SecurityDeposit");
+            form.Add(new StringContent(editPropertyViewModel.SquareFeet.ToString()), "SquareFeet");
+            form.Add(new StringContent(editPropertyViewModel.Bedrooms.ToString()), "Bedrooms");
+            form.Add(new StringContent(editPropertyViewModel.Bathrooms.ToString()), "Bathrooms");
+            form.Add(new StringContent(((int)(editPropertyViewModel.PropertyType ?? 0)).ToString()), "PropertyType");
+            form.Add(new StringContent(((int)(editPropertyViewModel.ListingType ?? 0)).ToString()), "ListingType");
+            form.Add(new StringContent(((int)(editPropertyViewModel.BHKType ?? 0 )).ToString()), "BHKType");
+            form.Add(new StringContent(((int)(editPropertyViewModel.FurnishingType ?? 0)).ToString()), "FurnishingType");
+            form.Add(new StringContent(editPropertyViewModel.AvailableFrom.ToString("O")), "AvailableFrom");
 
-            if (m.Images != null)
+            if (editPropertyViewModel.Images != null)
             {
-                foreach (var img in m.Images.Where(i => i?.Length > 0))
+                foreach (var img in editPropertyViewModel.Images.Where(i => i?.Length > 0))
                 {
-                    var stream = img.OpenReadStream();
-                    var sc = new StreamContent(stream);
-                    sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(img.ContentType);
+                    var stream = img.OpenReadStream(); //Reads the file from memory/request->Converts it into a stream(binary data)
+                    var sc = new StreamContent(stream); //Converts the stream into something HTTP can send
+                    sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(img.ContentType); //Server needs to know what type of file this is
                     form.Add(sc, "Images", img.FileName);
                 }
             }
@@ -240,7 +206,7 @@ namespace RentalsAndProperties.Web.Services
             return form;
         }
 
-        //  Response reader
+        // Response reader
 
         private async Task<ApiResponseModel<T>?> ReadAsync<T>(HttpResponseMessage response)
         {

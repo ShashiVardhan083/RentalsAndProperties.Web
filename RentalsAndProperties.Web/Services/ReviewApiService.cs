@@ -2,7 +2,6 @@
 using System.Text.Json;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
-using RentalsAndProperties.Web.ViewModels.Review;
 
 namespace RentalsAndProperties.Web.Services
 {
@@ -18,47 +17,49 @@ namespace RentalsAndProperties.Web.Services
             Logger = logger;
         }
 
-        public async Task<ApiResponseModel<ReviewViewModel>?> CreateAsync(ReviewViewModel vm)
+        public async Task<ApiResponseModel<ReviewResponseDto>?> CreateAsync(CreateReviewRequestDto createReviewRequestDto)
         {
-            var payload = new
-            {
-                PropertyId = vm.PropertyId,
-                ReviewType = vm.ReviewType,
-                Rating = vm.Rating,
-                Comment = vm.Comment,
-                OwnerResponsiveness = vm.OwnerResponsiveness,
-                PropertyAccuracy = vm.PropertyAccuracy,
-                TransactionId = vm.TransactionId,
-                PriceSatisfaction = vm.PriceSatisfaction,
-                WouldRecommend = vm.WouldRecommend
-            };
-            var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+            var content = new StringContent(
+                JsonSerializer.Serialize(createReviewRequestDto),
+                Encoding.UTF8,
+                "application/json"
+            );
             var response = await HttpClient.PostAsync("api/reviews", content);
-            return await ReadAsync<ReviewViewModel>(response);
+            return await ReadAsync<ReviewResponseDto>(response);
         }
 
-        public async Task<ApiResponseModel<List<ReviewViewModel>>?> GetPropertyReviewsAsync(Guid propertyId)
+        public async Task<ApiResponseModel<List<ReviewResponseDto>>?> GetPropertyReviewsAsync(Guid propertyId)
         {
             var response = await HttpClient.GetAsync($"api/reviews/property/{propertyId}");
-            return await ReadAsync<List<ReviewViewModel>>(response);
+            return await ReadAsync<List<ReviewResponseDto>>(response);
         }
 
-        public async Task<ApiResponseModel<List<ReviewViewModel>>?> GetMyReviewsAsync()
+        public async Task<ApiResponseModel<List<ReviewResponseDto>>?> GetMyReviewsAsync()
         {
             var response = await HttpClient.GetAsync("api/reviews/user");
-            return await ReadAsync<List<ReviewViewModel>>(response);
+            return await ReadAsync<List<ReviewResponseDto>>(response);
         }
 
         private async Task<ApiResponseModel<T>?> ReadAsync<T>(HttpResponseMessage response)
         {
+            var body = await response.Content.ReadAsStringAsync();
             try
             {
-                var body = await response.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<ApiResponseModel<T>>(body, JsonOpts);
+                // Only try to deserialize if it's a success response
+                if (response.IsSuccessStatusCode)
+                    return JsonSerializer.Deserialize<ApiResponseModel<T>>(body, JsonOpts);
+
+                // For error responses, return a clean message
+                Logger.LogWarning("API {Status}: {Body}", response.StatusCode, body);
+                return new ApiResponseModel<T>
+                {
+                    Success = false,
+                    Message = $"Request failed ({response.StatusCode})."
+                };
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Review API error");
+                Logger.LogError(ex, "Deserialize error. Body: {Body}", body);
                 return new ApiResponseModel<T> { Success = false, Message = "Unable to reach server." };
             }
         }

@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
+using RentalsAndProperties.Web.Mappings;
+using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
 using RentalsAndProperties.Web.ViewModels.Report;
-using RentalsAndProperties.Web.Models.Dtos;
 
 namespace RentalsAndProperties.Web.Controllers
 {
@@ -10,15 +11,39 @@ namespace RentalsAndProperties.Web.Controllers
     public class ReportController : Controller
     {
         private readonly ReportApiService ReportApi;
+        private readonly PropertyApiService PropertyApi;
 
-        public ReportController(ReportApiService reportApi)
+        public ReportController(ReportApiService reportApi, PropertyApiService propertyApi)
         {
             ReportApi = reportApi;
+            PropertyApi = propertyApi;
         }
 
         [HttpGet]
-        public IActionResult Create(string targetType, Guid targetId, string? targetTitle = null)
+        public async Task<IActionResult> Create(string targetType, Guid targetId, string? targetTitle = null)
         {
+            if (string.IsNullOrWhiteSpace(targetType) || targetId == Guid.Empty)
+            {
+                TempData["Error"] = "Invalid report request.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            Console.WriteLine($"targetType: '{targetType}'");
+            if (targetType == "Property" || targetType == "property")
+            {
+                var property = await PropertyApi.GetDetailsAsync(targetId);
+
+                var userName = User.Identity?.Name;
+
+                if (property?.Success == true &&
+                       property.Data != null &&
+                       !string.IsNullOrEmpty(userName) &&
+                        userName.Equals(property.Data.OwnerName, StringComparison.OrdinalIgnoreCase)) 
+                {
+                    TempData["Error"] = "You cannot report your own property.";
+                    return RedirectToAction("Details", "Property", new { id = targetId });
+                }
+            }
             return View(new CreateReportViewModel
             {
                 TargetType = targetType,
@@ -29,16 +54,17 @@ namespace RentalsAndProperties.Web.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(CreateReportViewModel model)
+        public async Task<IActionResult> Create(CreateReportViewModel createReportViewModel)
         {
             if (!ModelState.IsValid)
-                return View(model);
+                return View(createReportViewModel);
 
             var result = await ReportApi.CreateReportAsync(
-                model.TargetType,
-                model.TargetId,
-                model.Reason,
-                model.Description);
+                createReportViewModel.TargetType,
+                createReportViewModel.TargetId,
+                createReportViewModel.TargetTitle,
+                createReportViewModel.Reason,
+                createReportViewModel.Description);
 
             if (result?.Success == true)
             {
@@ -47,7 +73,7 @@ namespace RentalsAndProperties.Web.Controllers
             }
 
             ViewBag.Error = result?.Message ?? "Failed to submit report.";
-            return View(model);
+            return View(createReportViewModel);
         }
 
         [HttpGet]
@@ -55,22 +81,9 @@ namespace RentalsAndProperties.Web.Controllers
         {
             var result = await ReportApi.GetMyReportsAsync();
 
-            var dtos = result?.Data ?? new List<ReportResponseDto>();
-
-            var vm = dtos.Select(r => new ReportViewModel
-            {
-                ReportId = r.ReportId,
-                ReporterName = r.ReporterName,
-                TargetType = r.TargetType,
-                TargetId = r.TargetId,
-                Reason = r.Reason,
-                Description = r.Description,
-                Status = r.Status,
-                CreatedAt = r.CreatedAt,
-                ResolvedAt = r.ResolvedAt
-            }).ToList();
-
-            return View(vm);
+            var reportResponseDtos = result?.Data ?? new List<ReportResponseDto>();
+            var reportViewModel = ReportMapper.ToViewModel(reportResponseDtos);
+            return View(reportViewModel);
         }
     }
 }

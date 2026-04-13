@@ -18,16 +18,10 @@
         public string BHKType { get; set; } = string.Empty;
         public string FurnishingType { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
-        public string? RejectionReason { get; set; }
         public DateTime AvailableFrom { get; set; }
-        public DateTime CreatedAt { get; set; }
         public Guid OwnerId { get; set; }
         public string OwnerName { get; set; } = string.Empty;
         public string OwnerPhone { get; set; } = string.Empty;
-        public double OwnerTrustScore { get; set; }
         public List<PropertyImageDto> Images { get; set; } = new();
-        public double AverageRating { get; set; }
-        public int ReviewCount { get; set; }
-        public List<ReviewResponseDto> Reviews { get; set; } = new();
     }
 }

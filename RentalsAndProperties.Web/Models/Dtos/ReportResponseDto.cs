@@ -9,7 +9,7 @@
         public string TargetType { get; set; } = string.Empty;
 
         public Guid TargetId { get; set; }
-
+        public string TargetTitle { get; set; } = string.Empty;
         public string Reason { get; set; } = string.Empty;
 
         public string? Description { get; set; }

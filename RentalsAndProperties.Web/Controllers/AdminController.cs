@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RentalsAndProperties.Web.Filters;
+using RentalsAndProperties.Web.Mappings;
 using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
 using RentalsAndProperties.Web.ViewModels.Admin;
 using RentalsAndProperties.Web.ViewModels.Property;
-using RentalsAndProperties.Web.ViewModels.Report;
 
 namespace RentalsAndProperties.Web.Controllers
 {
@@ -28,6 +28,10 @@ namespace RentalsAndProperties.Web.Controllers
         [HttpGet]
         public async Task<IActionResult> Index()
         {
+
+            if (TempData["Success"] is string success) ViewBag.Success = success;
+            if (TempData["Error"] is string error) ViewBag.Error = error;
+
             var result = await PropertyApi.GetPendingAsync();
 
             if (result == null || !result.Success || result.Data == null)
@@ -36,55 +40,28 @@ namespace RentalsAndProperties.Web.Controllers
                 return View(new List<PropertyDetailViewModel>());
             }
 
-            if (TempData["Success"] is string success) ViewBag.Success = success;
-            if (TempData["Error"] is string error) ViewBag.Error = error;
+            var propertyDetailViewModel = PropertyMapper.ToViewModel(result.Data);
 
-            var vm = result.Data.Select(p => new PropertyDetailViewModel
-            {
-                PropertyId = p.PropertyId,
-                Title = p.Title,
-                Description = p.Description,
-                City = p.City,
-                Address = p.Address,
-                Pincode = p.Pincode,
-                Price = p.Price,
-                SecurityDeposit = p.SecurityDeposit,
-                Bedrooms = p.Bedrooms,
-                Bathrooms = p.Bathrooms,
-                SquareFeet = (int)p.SquareFeet,
-                PropertyType = p.PropertyType,
-                ListingType = p.ListingType,
-                BHKType = p.BHKType,
-                FurnishingType = p.FurnishingType,
-                AvailableFrom = p.AvailableFrom,
-                Status = p.Status,
-                OwnerName = p.OwnerName,
-                OwnerPhone = p.OwnerPhone,
-                OwnerTrustScore = p.OwnerTrustScore,
-                Images = p.Images.Select(i => new PropertyImageViewModel
-                {
-                    ImageId = i.ImageId,
-                    ImageUrl = i.ImageUrl,
-                    IsPrimary = i.IsPrimary
-                }).ToList()
-            }).ToList();
-
-            return View(vm);
+            return View(propertyDetailViewModel);
         }
 
         // POST /Admin/Approve/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Approve(Guid id)
+        public async Task<IActionResult> ApproveRejectProperty(Guid id, string? reason, bool isApproved)
         {
-            var result = await PropertyApi.ApprovePropertyAsync(id);
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Success == true
-                    ? $"Property '{result.Data?.Title}' approved and is now live!"
-                    : (result?.Message ?? "Approval failed.");
+            var result = await PropertyApi.GetDetailsAsync(id);
+            if (result == null || !result.Success || result.Data == null)
+            {
+                TempData["Error"] = "Property not found.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            await PropertyApi.ApproveRejectPropertyAsync(id, reason, isApproved);
             return RedirectToAction(nameof(Index));
         }
+
+       
 
         // GET /Admin/Reject/{id}  – Shows the reject form
         [HttpGet]
@@ -104,24 +81,6 @@ namespace RentalsAndProperties.Web.Controllers
             });
         }
 
-        // POST /Admin/Reject/{id}
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Reject(Guid id, RejectPropertyViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var result = await PropertyApi.RejectPropertyAsync(id, model.Reason);
-            TempData[result?.Success == true ? "Success" : "Error"] =
-                result?.Success == true
-                    ? $"Property rejected. Owner will be notified."
-                    : (result?.Message ?? "Rejection failed.");
-
-            return RedirectToAction(nameof(Index));
-        }
 
         //  Dashboard
         [HttpGet]
@@ -136,53 +95,23 @@ namespace RentalsAndProperties.Web.Controllers
                 return View(new AdminAnalyticsViewModel());
             }
 
-            var dto = result.Data;
+            var adminAnalyticsDto = result.Data;
+            var adminAnalyticsViewModel = AnalyticsMapper.ToViewModel(result.Data);
+            return View(adminAnalyticsViewModel);
+        }
 
-            var vm = new AdminAnalyticsViewModel
+        [HttpGet]
+        public async Task<IActionResult> AllUsers()
+        {
+            var result = await AnalyticsApi.GetAllUsersAsync();
+
+            if (result == null || !result.Success || result.Data == null)
             {
-                TotalUsers = dto.TotalUsers,
-                TotalOwners = dto.TotalOwners,
-                TotalProperties = dto.TotalProperties,
-                PendingApprovals = dto.PendingApprovals,
-                ActiveListings = dto.ActiveListings,
-                CompletedTransactions = dto.CompletedTransactions,
-                TotalReviews = dto.TotalReviews,
-                TotalReports = dto.TotalReports,
-                AveragePropertyPrice = dto.AveragePropertyPrice,
-
-                TopCities = dto.TopCities.Select(c => new CityStatViewModel
-                {
-                    City = c.City,
-                    Count = c.Count
-                }).ToList(),
-
-                MonthlyRegistrations = dto.MonthlyRegistrations.Select(m => new MonthlyStatViewModel
-                {
-                    Month = m.Month,
-                    Count = m.Count
-                }).ToList(),
-
-                MonthlyTransactions = dto.MonthlyTransactions.Select(m => new MonthlyStatViewModel
-                {
-                    Month = m.Month,
-                    Count = m.Count
-                }).ToList(),
-
-                RecentReports = dto.RecentReports.Select(r => new ReportViewModel
-                {
-                    ReportId = r.ReportId,
-                    ReporterName = r.ReporterName,
-                    TargetType = r.TargetType,
-                    TargetId = r.TargetId,
-                    Reason = r.Reason,
-                    Description = r.Description,
-                    Status = r.Status,
-                    CreatedAt = r.CreatedAt,
-                    ResolvedAt = r.ResolvedAt
-                }).ToList()
-            };
-
-            return View(vm);
+                ViewBag.Error = result?.Message ?? "Failed to load users.";
+                return View(new List<UserListViewModel>());
+            }
+            var userListViewModel = UserMapper.ToViewModel(result.Data);
+            return View(userListViewModel);
         }
 
         //  Reports list
@@ -193,26 +122,12 @@ namespace RentalsAndProperties.Web.Controllers
 
             ViewBag.Filter = filter;
 
-            var dtos = result?.Data ?? new List<ReportResponseDto>();
-
-            var vm = dtos.Select(r => new ReportViewModel
-            {
-                ReportId = r.ReportId,
-                ReporterName = r.ReporterName,
-                TargetType = r.TargetType,
-                TargetId = r.TargetId,
-                Reason = r.Reason,
-                Description = r.Description,
-                Status = r.Status,
-                CreatedAt = r.CreatedAt,
-                ResolvedAt = r.ResolvedAt
-            }).ToList();
-
-            return View(vm);
+            var reportResponseDtos = result?.Data ?? new List<ReportResponseDto>();
+            var reportViewModel = ReportMapper.ToViewModel(reportResponseDtos);
+            return View(reportViewModel);
         }
 
         //  Resolve report
-        [HttpPost("Reports/Resolve/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResolveReport(Guid id)
         {
@@ -223,7 +138,6 @@ namespace RentalsAndProperties.Web.Controllers
         }
 
         //  Reject report
-        [HttpPost("Reports/Reject/{id:guid}")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> RejectReport(Guid id)
         {

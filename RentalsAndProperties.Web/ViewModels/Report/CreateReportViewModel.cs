@@ -14,6 +14,7 @@ namespace RentalsAndProperties.Web.ViewModels.Report
         public string Reason { get; set; } = string.Empty;
 
         [MaxLength(1000)]
+        [Required(ErrorMessage="Description is mandatory")]
         public string? Description { get; set; }
 
         // For display

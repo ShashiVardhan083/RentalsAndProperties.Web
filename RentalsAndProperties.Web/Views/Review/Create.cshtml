@@ -1,16 +1,16 @@
-﻿@model RentalsAndProperties.Web.ViewModels.Review.ReviewViewModel
+﻿@model RentalsAndProperties.Web.ViewModels.Review.CreateReviewViewModel
+
 @{
     ViewData["Title"] = "Write a Review";
     var isTransaction = Model.ReviewType == "Transaction";
 }
 
 <div class="review-page">
+
+    <!-- HERO -->
     <div class="review-hero">
-        <div class="hero-orb orb-1" aria-hidden="true"></div>
-        <div class="hero-orb orb-2" aria-hidden="true"></div>
         <div class="review-hero-inner">
-            <div class="hero-badge">⭐ Share Your Experience</div>
-            <h1 class="review-hero-title">Write a <span class="gradient-text">Review</span></h1>
+            <h1 class="review-hero-title">Write a Review</h1>
             <p class="review-hero-sub">
                 @Model.PropertyTitle
                 @if (isTransaction)
@@ -25,435 +25,364 @@
         </div>
     </div>
 
+    <!-- BODY -->
     <div class="review-body">
-        <form asp-action="Create" asp-controller="Review" method="post" id="reviewForm" novalidate>
+
+        <form asp-action="Create"
+              asp-controller="Review"
+              method="post"
+              id="reviewForm"
+              novalidate> @*novalidate is used to avoid browser validation. we can handle our own validation*@
+
             @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.PropertyId)
+            @Html.HiddenFor(m => m.PropertyTitle)
+            @Html.HiddenFor(m => m.ReviewType)
+            @Html.HiddenFor(m => m.TransactionId)
 
-            <input type="hidden" asp-for="PropertyId" />
-            <input type="hidden" asp-for="PropertyTitle" />
-            <input type="hidden" asp-for="ReviewType" />
-            <input type="hidden" asp-for="TransactionId" />
-
-            @if (!ViewData.ModelState.IsValid)
-            {
-                <div class="alert alert-error mb-3">
-                    <span>⚠</span>
-                    <div>
-                        @foreach (var e in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-                        {
-                            <div>@e.ErrorMessage</div>
-                        }
-                    </div>
-                </div>
-            }
+            @Html.ValidationSummary(true, "", new { @class = "alert alert-error mb-3" })
 
             <div class="review-card">
-                <!-- Overall Rating -->
+
+                <!-- OVERALL RATING -->
                 <div class="review-section">
                     <h2 class="review-section-title">⭐ Overall Rating</h2>
                     <p class="review-section-sub">How would you rate this property overall?</p>
-                    <div class="star-rating-widget" id="ratingWidget">
-                        <input type="hidden" asp-for="Rating" id="ratingInput" />
-                        @for (int i = 5; i >= 1; i--)
-                        {
-                            <label class="star-label" data-val="@i" title="@i star@(i > 1 ? "s" : "")">★</label>
-                        }
-                        <div class="star-hint" id="starHint">Click to rate</div>
+
+                    <div class="rating-row">
+                        <div class="star-rating-widget" id="ratingWidget">
+                            @Html.HiddenFor(m => m.Rating, new { id = "ratingInput" })
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <label class="star-label" data-val="@i">★</label>
+                            }
+                        </div>
+                        <span class="star-hint" id="starHint">Click to rate</span>
                     </div>
-                    <span asp-validation-for="Rating" class="invalid-feedback"></span>
+
+                    @Html.ValidationMessageFor(m => m.Rating, "", new { @class = "invalid-feedback" })
                 </div>
 
-                <!-- Comment -->
+                <!-- COMMENT -->
                 <div class="review-section">
                     <h2 class="review-section-title">✍️ Your Review</h2>
+
                     <div class="form-group">
-                        <textarea asp-for="Comment" class="form-control review-textarea"
-                                  placeholder="Share your experience with this property..."
-                                  rows="5" required></textarea>
-                        <span asp-validation-for="Comment" class="invalid-feedback"></span>
-                        <div class="char-counter"><span id="commentLen">0</span> / 2000</div>
+                        @Html.TextAreaFor(m => m.Comment, new
+                        {
+                            @class = "form-control review-textarea",
+                                                placeholder = "Share your experience with this property...",
+                                                rows = 5
+                                                })
+                        @Html.ValidationMessageFor(m => m.Comment, "", new { @class = "invalid-feedback" })
+                        <div class="char-counter">
+                            <span id="commentLen">0</span> / 2000
+                        </div>
                     </div>
                 </div>
 
-                <!-- Sub-ratings -->
+                <!-- SUB RATINGS -->
                 <div class="review-section">
                     <h2 class="review-section-title">📊 Detailed Ratings</h2>
+
                     <div class="sub-rating-grid">
+
                         <div class="sub-rating-item">
                             <label class="sub-rating-label">Owner Responsiveness</label>
                             <div class="mini-stars" id="ownerRespWidget">
-                                <input type="hidden" asp-for="OwnerResponsiveness" id="ownerRespInput" value="5" />
-                                @for (int i = 5; i >= 1; i--)
+                                @Html.HiddenFor(m => m.OwnerResponsiveness, new { id = "ownerRespInput" })
+                                @for (int i = 1; i <= 5; i++)
                                 {
-                                    <label class="mini-star" data-val="@i">★</label>
+                                    <label class="star-label" data-val="@i">★</label>
                                 }
                             </div>
                         </div>
+
                         <div class="sub-rating-item">
                             <label class="sub-rating-label">Property Accuracy</label>
                             <div class="mini-stars" id="propAccWidget">
-                                <input type="hidden" asp-for="PropertyAccuracy" id="propAccInput" value="5" />
-                                @for (int i = 5; i >= 1; i--)
+                                @Html.HiddenFor(m => m.PropertyAccuracy, new { id = "propAccInput" })
+                                @for (int i = 1; i <= 5; i++)
                                 {
-                                    <label class="mini-star" data-val="@i">★</label>
+                                    <label class="star-label" data-val="@i">★</label>
                                 }
                             </div>
                         </div>
+
                     </div>
                 </div>
-
-                <!-- Transaction-only extras -->
-                @if (isTransaction)
-                {
-                    <div class="review-section tx-only-section">
-                        <h2 class="review-section-title">💰 Transaction Details</h2>
-                        <div class="sub-rating-grid">
-                            <div class="sub-rating-item">
-                                <label class="sub-rating-label">Price Satisfaction</label>
-                                <div class="mini-stars" id="priceWidget">
-                                    <input type="hidden" asp-for="PriceSatisfaction" id="priceInput" value="5" />
-                                    @for (int i = 5; i >= 1; i--)
-                                    {
-                                        <label class="mini-star" data-val="@i">★</label>
-                                    }
-                                </div>
-                            </div>
-                            <div class="sub-rating-item">
-                                <label class="sub-rating-label">Would You Recommend?</label>
-                                <div class="recommend-options">
-                                    <label class="recommend-chip selected" id="recYes">
-                                        <input type="radio" name="WouldRecommend" value="true" checked hidden /> 👍 Yes
-                                    </label>
-                                    <label class="recommend-chip" id="recNo">
-                                        <input type="radio" name="WouldRecommend" value="false" hidden /> 👎 No
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
             </div>
 
+            <!-- SUBMIT -->
             <div class="review-submit-bar">
-                <a href="/Property/Details/@Model.PropertyId" class="btn btn-secondary">Cancel</a>
+                <a asp-controller="Property"
+                   asp-action="Details"
+                   asp-route-id="@Model.PropertyId"
+                   class="btn btn-secondary">
+                    Cancel
+                </a>
                 <button type="submit" class="btn btn-primary btn-lg" id="reviewBtn">
-                    <span class="btn-text">⭐ Submit Review</span>
-                    <span class="btn-spinner"></span>
+                    ⭐ Submit Review
                 </button>
             </div>
+
         </form>
+
     </div>
 </div>
 
-@section HeadStyles {
-    <style>
-        .review-page {
-            padding-top: 68px;
-            min-height: 100vh;
+<style>
+    .review-page {
+        max-width: 700px;
+        margin: auto;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+    }
+
+    .review-hero {
+        margin-bottom: 20px;
+    }
+
+    .review-hero-title {
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .review-hero-sub {
+        color: #555;
+        font-size: 14px;
+    }
+
+    .review-tx-badge,
+    .review-int-badge {
+        margin-left: 8px;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 5px;
+        background: #eee;
+    }
+
+    .review-card {
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .review-section {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+        .review-section:last-child {
+            border-bottom: none;
         }
 
-        .review-hero {
-            position: relative;
-            background: var(--gradient-hero);
-            overflow: hidden;
-            padding: 2.5rem 2rem;
+    .review-section-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 15px;
+        color: black;
+    }
+
+    .review-section-sub {
+        font-size: 13px;
+        color: #777;
+        margin-bottom: 10px;
+    }
+
+    .rating-row {
+        display: flex;
+        align-items: center;
+    }
+
+    .star-rating-widget,
+    .mini-stars {
+        display: flex;
+        gap: 4px;
+    }
+
+    .star-label {
+        font-size: 24px;
+        color: #ccc;
+        cursor: pointer;
+        user-select: none;
+        transition: color 0.1s;
+    }
+
+    .mini-stars .star-label {
+        font-size: 20px;
+    }
+
+    .star-label.active {
+        color: orange;
+    }
+
+    .star-hint {
+        font-size: 12px;
+        margin-left: 10px;
+        color: #777;
+    }
+
+    .review-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+
+    .char-counter {
+        text-align: right;
+        font-size: 12px;
+        color: #777;
+        margin-top: 4px;
+    }
+
+    .sub-rating-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .sub-rating-item {
+        flex: 1 1 200px;
+        /*
+            flex-grow: 1 ->Take extra space if available
+            flex-shrink: 1 ->Shrink if space is not enough
+            flex-basis: 200px ->Start with 200px width
+        */
+    }
+
+    .sub-rating-label 
+    {
+        display: block;
+        font-size: 13px;
+        margin-bottom: 5px;
+        color: black;
+    }
+
+    .invalid-feedback {
+        color: red;
+        font-size: 12px;
+        display: block;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        color: #991b1b;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .btn {
+        padding: 8px 14px;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
         }
 
-        .review-hero-inner {
-            max-width: 720px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 1;
+    .btn-secondary {
+        background: #e5e7eb;
+        color: black;
+    }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
         }
 
-        .review-hero-title {
-            font-size: clamp(1.6rem,4vw,2.5rem);
-            font-weight: 800;
-            margin: .5rem 0;
-        }
-
-        .review-hero-sub {
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            gap: .75rem;
-            flex-wrap: wrap;
-        }
-
-        .review-tx-badge {
-            padding: .25rem .75rem;
-            background: rgba(108,99,255,.2);
-            border: 1px solid rgba(108,99,255,.3);
-            border-radius: 100px;
-            font-size: .75rem;
-            font-weight: 700;
-            color: #a78bfa;
-        }
-
-        .review-int-badge {
-            padding: .25rem .75rem;
-            background: rgba(67,233,123,.15);
-            border: 1px solid rgba(67,233,123,.3);
-            border-radius: 100px;
-            font-size: .75rem;
-            font-weight: 700;
-            color: #43e97b;
-        }
-
-        .review-body {
-            max-width: 720px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
-
-        .review-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            margin-bottom: 1.5rem;
-        }
-
-        .review-section {
-            padding: 1.75rem 2rem;
-            border-bottom: 1px solid var(--border-subtle);
-        }
-
-            .review-section:last-child {
-                border-bottom: none;
-            }
-
-        .review-section-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: .25rem;
-        }
-
-        .review-section-sub {
-            font-size: .85rem;
-            color: var(--text-muted);
-            margin-bottom: 1rem;
-        }
-
-        /* Main star rating */
-        .star-rating-widget {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            align-items: center;
-            gap: .1rem;
-            position: relative;
-            margin-bottom: .5rem;
-        }
-
-        .star-label {
-            font-size: 2.5rem;
-            color: var(--border-subtle);
-            cursor: pointer;
-            transition: color .15s, transform .15s;
-            line-height: 1;
-        }
-
-            .star-label:hover,
-            .star-label:hover ~ .star-label {
-                color: #f59e0b;
-            }
-
-            .star-label.active {
-                color: #f59e0b;
-            }
-
-        .star-hint {
-            font-size: .82rem;
-            color: var(--text-muted);
-            margin-left: .75rem;
-            white-space: nowrap;
-        }
-
-        /* Sub-ratings (mini stars) */
-        .sub-rating-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
-            gap: 1.25rem;
-        }
-
-        .sub-rating-item {
-            display: flex;
-            flex-direction: column;
-            gap: .5rem;
-        }
-
-        .sub-rating-label {
-            font-size: .82rem;
-            font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .mini-stars {
-            display: flex;
-            flex-direction: row-reverse;
-            justify-content: flex-end;
-            gap: .05rem;
-        }
-
-        .mini-star {
-            font-size: 1.5rem;
-            color: var(--border-subtle);
-            cursor: pointer;
-            transition: color .12s;
-            line-height: 1;
-        }
-
-            .mini-star:hover,
-            .mini-star:hover ~ .mini-star {
-                color: #f59e0b;
-            }
-
-            .mini-star.active {
-                color: #f59e0b;
-            }
-
-        /* Textarea */
-        .review-textarea {
-            width: 100%;
-            min-height: 130px;
-            resize: vertical;
-        }
-
-        .char-counter {
-            font-size: .75rem;
-            color: var(--text-muted);
-            text-align: right;
-            margin-top: .3rem;
-        }
-
-        /* Recommend options */
-        .recommend-options {
-            display: flex;
-            gap: .75rem;
-        }
-
-        .recommend-chip {
-            padding: .4rem 1rem;
-            border-radius: 100px;
-            border: 1.5px solid var(--border-subtle);
-            cursor: pointer;
-            font-size: .85rem;
-            font-weight: 600;
-            transition: all .15s;
-        }
-
-            .recommend-chip:hover {
-                border-color: var(--accent-1);
-            }
-
-            .recommend-chip.selected {
-                background: rgba(108,99,255,.1);
-                border-color: var(--accent-1);
-                color: var(--accent-1);
-            }
-
-        .tx-only-section {
-            background: rgba(108,99,255,.03);
-        }
-
-        .review-submit-bar {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            padding: .5rem 0;
-        }
-    </style>
-}
+    .review-submit-bar {
+        margin-top: 15px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+</style>
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const hints = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+        document.addEventListener('DOMContentLoaded', function () {
 
-            // ── Main star rating ──────────────────────────────────────────────────────
-            function initMainStars() {
-                const labels  = document.querySelectorAll('.star-rating-widget .star-label');
-                const input   = document.getElementById('ratingInput');
-                const hint    = document.getElementById('starHint');
+            var hints = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
 
-                labels.forEach((lbl, idx) => {
-                    const val = parseInt(lbl.dataset.val);
-                    lbl.addEventListener('click', () => {
-                        input.value = val;
-                        hint.textContent = hints[val];
-                        labels.forEach(l => l.classList.toggle('active', parseInt(l.dataset.val) <= val));
-                    });
-                    lbl.addEventListener('mouseover', () => {
-                        hint.textContent = hints[val];
-                        labels.forEach(l => l.classList.toggle('active', parseInt(l.dataset.val) <= val));
-                    });
-                });
-
-                const widget = document.getElementById('ratingWidget');
-                widget.addEventListener('mouseleave', () => {
-                    const current = parseInt(input.value) || 0;
-                    labels.forEach(l => l.classList.toggle('active', parseInt(l.dataset.val) <= current));
-                    hint.textContent = current ? hints[current] : 'Click to rate';
-                });
-
-                // Set initial (if default value)
-                const init = parseInt(input.value) || 0;
-                if (init) labels.forEach(l => l.classList.toggle('active', parseInt(l.dataset.val) <= init));
-            }
-
-            // ── Mini star ratings ─────────────────────────────────────────────────────
-            function initMiniStars(widgetId, inputId, defaultVal) {
-                const widget = document.getElementById(widgetId);
+            function initStars(widgetId, inputId, defaultVal) {
+                var widget = document.getElementById(widgetId);
                 if (!widget) return;
-                const labels = widget.querySelectorAll('.mini-star');
-                const input  = document.getElementById(inputId);
-                input.value  = defaultVal;
 
-                function setActive(val) {
-                    labels.forEach(l => l.classList.toggle('active', parseInt(l.dataset.val) <= val));
+                var labels = widget.querySelectorAll('.star-label'); //Get all stars inside
+                var input  = document.getElementById(inputId); //gets hidden input
+
+                    if (defaultVal > 0 && parseInt(input.value) === 0) {
+                       input.value = defaultVal;
+                 }
+                function updateStars(val) { //This controls which stars are filled
+                    labels.forEach(function (lbl) {
+                        lbl.classList.toggle('active', parseInt(lbl.dataset.val) <= val);
+                    });
                 }
-                setActive(defaultVal);
 
-                labels.forEach(lbl => {
-                    const v = parseInt(lbl.dataset.val);
-                    lbl.addEventListener('click', () => { input.value = v; setActive(v); });
-                    lbl.addEventListener('mouseover', () => setActive(v));
+                labels.forEach(function (lbl) {
+                    var val = parseInt(lbl.dataset.val); //dataset is used to access custom HTML attributes
+
+                    lbl.addEventListener('click', function () {
+                        input.value = val;
+                        updateStars(val);
+
+                        var hint = document.getElementById('starHint');
+                        if (hint) hint.textContent = hints[val] || '';
+                    });
+
+                    lbl.addEventListener('mouseover', function () {
+                        updateStars(val);
+                    });
                 });
-                widget.addEventListener('mouseleave', () => setActive(parseInt(input.value) || defaultVal));
+
+                widget.addEventListener('mouseleave', function () {
+                    updateStars(parseInt(input.value) || defaultVal);
+                });
+
+                updateStars(parseInt(input.value) || defaultVal);
             }
 
-            initMainStars();
-            initMiniStars('ownerRespWidget', 'ownerRespInput', 5);
-            initMiniStars('propAccWidget',   'propAccInput',   5);
-            initMiniStars('priceWidget',     'priceInput',     5);
+            var textarea = document.querySelector('.review-textarea');
+            var counter  = document.getElementById('commentLen');
 
-            // ── Recommend chips ───────────────────────────────────────────────────────
-            document.querySelectorAll('.recommend-chip').forEach(chip => {
-                chip.addEventListener('click', () => {
-                    document.querySelectorAll('.recommend-chip').forEach(c => c.classList.remove('selected'));
-                    chip.classList.add('selected');
-                });
-            });
-
-            // ── Char counter ──────────────────────────────────────────────────────────
-            const textarea = document.querySelector('.review-textarea');
-            const counter  = document.getElementById('commentLen');
             if (textarea && counter) {
                 counter.textContent = textarea.value.length;
-                textarea.addEventListener('input', () => counter.textContent = textarea.value.length);
+                textarea.addEventListener('input', function () {
+                    counter.textContent = textarea.value.length;
+                });
             }
 
-            // ── Submit ────────────────────────────────────────────────────────────────
-            document.getElementById('reviewForm').addEventListener('submit', function(e) {
-                const rating = parseInt(document.getElementById('ratingInput').value) || 0;
+            document.getElementById('reviewForm').addEventListener('submit', function (e) {
+                var rating = parseInt(document.getElementById('ratingInput').value) || 0;
                 if (rating < 1) {
-                    e.preventDefault();
-                    Toast.error('Please select a star rating.');
+                    e.preventDefault(); //Without preventDefault()->User clicks submit->Alert shows->Form STILL submits->Page reloads
+                    alert('Please select a rating.');
                     return;
                 }
-                setButtonLoading(document.getElementById('reviewBtn'), true);
+                var btn = document.getElementById('reviewBtn');
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Submitting...';
+                }
             });
+
+            /* INIT */
+            initStars('ratingWidget',    'ratingInput',    0);
+            initStars('ownerRespWidget', 'ownerRespInput', 5);
+            initStars('propAccWidget',   'propAccInput',   5);
         });
     </script>
 }

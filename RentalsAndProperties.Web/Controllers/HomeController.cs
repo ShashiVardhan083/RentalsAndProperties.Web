@@ -1,6 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
-using RentalsAndProperties.Web.Helpers;
+using RentalsAndProperties.Web.Constants;
 using RentalsAndProperties.Web.Models;
 using RentalsAndProperties.Web.Models.Dtos;
 using RentalsAndProperties.Web.Services;
@@ -11,7 +11,6 @@ namespace RentalsAndProperties.Web.Controllers
     public class HomeController : Controller
     {
         private readonly PropertySearchApiService SearchApi;
-
         public HomeController(PropertySearchApiService searchApi)
         {
             SearchApi = searchApi;
@@ -22,39 +21,39 @@ namespace RentalsAndProperties.Web.Controllers
             // Load approved properties for the featured section
             var query = new PropertySearchQueryDto
             {
-                Page = 1,
-                PageSize = 6,
-                SortBy = "Newest"
+                Page = PaginationConstants.pageNo,
+                PageSize = PaginationConstants.pageSize,
+                SortBy = PaginationConstants.sortBy
             };
 
             var result = await SearchApi.SearchAsync(query);
 
-            var vm = new PropertyListViewModel
+            var propertyListViewModel = new PropertyListViewModel
             {
                 TotalCount = result?.Data?.TotalCount ?? 0,
 
-                Properties = result?.Data?.Properties?.Select(p => new PropertyCardViewModel
+                Properties = result?.Data?.Properties?.Select(property => new PropertyCardViewModel
                 {
-                    PropertyId = p.PropertyId,
-                    Title = p.Title,
-                    City = p.City,
-                    Price = p.Price,
-                    ListingType = p.ListingType,
-                    PropertyType = p.PropertyType,
-                    BHKType = p.BHKType,
-                    PrimaryImageUrl = p.PrimaryImageUrl
+                    PropertyId = property.PropertyId,
+                    Title = property.Title,
+                    City = property.City,
+                    Price = property.Price,
+                    ListingType = property.ListingType,
+                    PropertyType = property.PropertyType,
+                    BHKType = property.BHKType,
+                    PrimaryImageUrl = property.PrimaryImageUrl
                 }).ToList() ?? new(),
 
                 IsAuthenticated = User.Identity?.IsAuthenticated ?? false,
 
-                FullName = User.Identity?.Name!,
+                FullName = User.Identity?.Name ?? string.Empty,
 
                 Roles = User.Claims
                .Where(c => c.Type == ClaimTypes.Role)
                .Select(c => c.Value)
                .ToList()
             };
-            return View(vm);
+            return View(propertyListViewModel);
         }
 
         [HttpGet("Home/Error")]

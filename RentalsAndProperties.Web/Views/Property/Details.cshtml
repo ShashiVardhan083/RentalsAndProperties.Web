@@ -2,6 +2,9 @@
 
 @{
     ViewData["Title"] = Model.Title;
+    var currentUser = User.Identity?.Name;
+    bool isOwner = !string.IsNullOrEmpty(currentUser) &&
+                   currentUser.Equals(Model.OwnerName, StringComparison.OrdinalIgnoreCase);
 }
 
 @if (Model == null)
@@ -49,14 +52,19 @@
         }
         else
         {
-            <div class="text-muted">No images available</div>
+            <div class="no-image-box">
+                <span class="house-icon">🏠</span>
+                <p>No images available</p>
+            </div>
         }
 
     </div>
 
     <div class="card mb-4">
         <div class="card-body">
-            <h5>Description</h5>
+            <h5>
+
+            </h5>
             <p>@Model.Description</p>
         </div>
     </div>
@@ -93,46 +101,99 @@
         </div>
     </div>
 
-    <div class="card mb-4">
-        <div class="card-body">
-            <h5>Owner Details</h5>
+    @if (!isOwner)
+    {
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5>Owner Details</h5>
 
-            <p><strong>Name:</strong> @Model.OwnerName</p>
-            <p><strong>Phone:</strong> @Model.OwnerPhone</p>
-            <p><strong>Trust Score:</strong> @Model.OwnerTrustScore / 100</p>
+                <p><strong>Name:</strong> @Model.OwnerName</p>
+                <p><strong>Phone:</strong> @Model.OwnerPhone</p>
+            </div>
         </div>
-    </div>
 
+        <div class="card mb-4">
+            <div class="action-buttons">
+
+                <a asp-controller="Review"
+                   asp-action="Create"
+                   asp-route-propertyId="@Model.PropertyId"
+                   class="btn btn-review">
+                    ✍️ Write Review
+                </a>
+
+                <a asp-controller="Report"
+                   asp-action="Create"
+                   asp-route-targetId="@Model.PropertyId"
+                   asp-route-targetType="Property"
+                   asp-route-targetTitle="@Model.Title"
+                   class="btn btn-report">
+                    🚩 Report Property
+                </a>
+
+
+                <a asp-controller="Transaction"
+                   asp-action="Initiate"
+                   asp-route-propertyId="@Model.PropertyId"
+                   class="btn btn-primary">
+                    💰 Start Transaction
+                </a>
+
+            </div>
+        </div>
+    }
     <div class="card mb-4">
         <div class="card-body">
-            <h5>Reviews (@Model.ReviewCount)</h5>
+
+            <h5 class="mb-3">Reviews (@Model.Reviews.Count)</h5>
 
             @if (Model.Reviews.Any())
             {
-                <p><strong>Average Rating:</strong> @Model.AverageRating.ToString("F1") / 5</p>
+                <p class="mb-4">
+                    <strong>Average Rating:</strong>
+                    @Model.Reviews.Average(r => r.Rating).ToString("F1") / 5
+                </p>
 
                 @foreach (var review in Model.Reviews)
                 {
-                    <div class="border p-3 mb-3 rounded">
+                    <div class="review-item">
 
-                        <strong>@review.ReviewerName</strong>
-                        <span class="text-muted">(@review.CreatedAt.ToString("dd MMM yyyy"))</span>
+                        <div class="review-header">
 
-                        <div>
-                            Rating: @review.Rating / 5
+                            <div>
+                                <strong>@review.ReviewerName</strong>
+                                <span class="text-muted">
+                                    • @review.CreatedAt.ToString("dd MMM yyyy")
+                                </span>
+                            </div>
+
+                            <span class="badge @(review.ReviewType == "Transaction" ? "badge-success" : "badge-secondary")">
+                                @review.ReviewType
+                            </span>
+
                         </div>
 
-                        <p>@review.Comment</p>
+                        <div class="review-rating">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                <span class="star @(i <= review.Rating ? "filled" : "")">★</span>
+                            }
+                        </div>
+
+                        <p class="review-comment">@review.Comment</p>
 
                     </div>
                 }
             }
             else
             {
-                <p>No reviews yet.</p>
+                <p class="text-muted">No reviews yet.</p>
             }
+
         </div>
     </div>
+
+    
 
 </div>
 
@@ -161,7 +222,7 @@
 
     h5 {
         margin-bottom: 12px;
-        font-weight: 600;
+        font-weight: 1000;
     }
 
     .main-image {
@@ -177,6 +238,23 @@
             transform: scale(1.02);
         }
 
+    .no-image-box {
+        width: 100%;
+        height: 300px;
+        border: 2px solid #d1d5db;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6b7280;
+        margin: 20px auto;
+    }
+
+    .house-icon {
+        font-size: 60px;
+        margin-bottom: 10px;
+    }
     .thumbnail-container {
         display: flex;
         gap: 10px;
@@ -202,6 +280,7 @@
         }
 
     .card {
+        color:black;
         border: 1px solid #e5e7eb;
         border-radius: 10px;
         padding: 15px;
@@ -258,6 +337,98 @@
         .btn-primary:hover {
             background: #4338ca;
         }
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+        margin: 20px 0;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 12px 18px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-review {
+        background: #4f46e5;
+        color: white;
+    }
+
+        .btn-review:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+    .btn-report {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+
+        .btn-report:hover {
+            background: #fecaca;
+            transform: translateY(-1px);
+        }
+
+    .btn:active {
+        transform: scale(0.98);
+    }
+
+    .review-item {
+        border-top: 1px solid #e5e7eb;
+        padding: 15px 0;
+    }
+
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .review-rating {
+        margin-bottom: 6px;
+    }
+
+    .star {
+        font-size: 16px;
+        color: #d1d5db;
+    }
+
+        .star.filled {
+            color: #f59e0b;
+        }
+
+    .review-comment {
+        font-size: 14px;
+        color: #374151;
+        margin: 0;
+    }
+
+    .badge-success {               @*transaction*@
+        background: #dcfce7;
+        color: #166534;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+    }
+
+    .badge-secondary {            @*Interaction*@
+        background: #e5e7eb;
+        color: #374151;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+    }
 </style>
 
 <script>
@@ -271,7 +442,7 @@
         thumbnails.forEach((thumb) => {
             thumb.addEventListener("click", function () {
 
-                mainImage.src = this.src;
+                mainImage.src = this.src; //Replace main image with clicked thumbnail
 
                 thumbnails.forEach(t => t.classList.remove("active"));
                 this.classList.add("active");

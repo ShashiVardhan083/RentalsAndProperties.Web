@@ -8,9 +8,6 @@
         public int TotalPages { get; set; }
         public int TotalCount { get; set; }
 
-        public bool HasPrevious => CurrentPage > 1;
-        public bool HasNext => CurrentPage < TotalPages;
-
         public bool IsAuthenticated { get; set; }
         public string FullName { get; set; } = string.Empty;
         public List<string> Roles { get; set; } = new();

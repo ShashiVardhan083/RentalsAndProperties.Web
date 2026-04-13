@@ -79,7 +79,6 @@
                                 <div>
                                     <div class="admin-owner-name">@p.OwnerName</div>
                                     <div class="admin-owner-meta">
-                                        Trust Score: @p.OwnerTrustScore.ToString("F0")/100 ·
                                         Listed @p.CreatedAt.ToString("MMM dd, yyyy")
                                     </div>
                                 </div>
@@ -87,10 +86,16 @@
 
                             <!-- Action Buttons -->
                             <div class="admin-actions">
-                                <form asp-controller="Admin" asp-action="Approve"
-                                      asp-route-id="@p.PropertyId" method="post"
+                                <form asp-controller="Admin"
+                                      asp-action="ApproveRejectProperty"
+                                      method="post"
                                       onsubmit="return confirm('Approve this property?')">
+
                                     @Html.AntiForgeryToken()
+
+                                    <input type="hidden" name="id" value="@p.PropertyId" />
+                                    <input type="hidden" name="isApproved" value="true" />
+
                                     <button type="submit" class="btn btn-approve">
                                         ✅ Approve
                                     </button>
@@ -100,17 +105,6 @@
                                 </a>
                             </div>
                         </div>
-
-                        <!-- Image strip -->
-                        @if (p.Images.Count > 1)
-                        {
-                            <div class="admin-img-strip">
-                                @foreach (var img in p.Images.Take(4))
-                                {
-                                    <img src="@img.ImageUrl" alt="Property image" loading="lazy" />
-                                }
-                            </div>
-                        }
                     </div>
                 }
             </div>
@@ -119,41 +113,256 @@
 </div>
 
 @section HeadStyles {
-    <style>
-        .dashboard-page { padding-top:68px; min-height:100vh; }
-        .dashboard-header { padding:2.5rem 2rem; }
-        .dashboard-header-inner { max-width:1280px; margin:0 auto; }
-        .admin-badge { display:inline-flex; align-items:center; gap:.4rem; padding:.3rem .85rem; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.2); border-radius:100px; font-size:.75rem; font-weight:700; color:rgba(255,255,255,.9); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.75rem; }
-        .dashboard-title { font-size:1.75rem; font-weight:800; }
-        .dashboard-subtitle { margin-top:.3rem; }
-        .dashboard-body { max-width:1280px; margin:0 auto; padding:2rem; }
-        .admin-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(360px,1fr)); gap:1.5rem; }
-        .admin-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--radius-lg); overflow:hidden; transition:transform .3s var(--spring),box-shadow .3s; }
-        .admin-card:hover { transform:translateY(-4px); box-shadow:var(--shadow-card); }
-        .admin-card-img { height:200px; background:var(--gradient-card); display:flex; align-items:center; justify-content:center; font-size:3rem; position:relative; }
-        .admin-card-status { position:absolute; top:.85rem; left:.85rem; padding:.3rem .75rem; background:rgba(247,151,30,.2); border:1px solid rgba(247,151,30,.4); color:#f59e0b; font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; border-radius:100px; }
-        .admin-img-count { position:absolute; bottom:.85rem; right:.85rem; padding:.25rem .6rem; background:rgba(0,0,0,.6); color:#fff; font-size:.72rem; font-weight:600; border-radius:100px; }
-        .admin-card-body { padding:1.25rem; }
-        .admin-card-title { font-size:1.05rem; font-weight:700; margin-bottom:.5rem; }
-        .admin-card-meta { display:flex; flex-wrap:wrap; gap:.5rem; font-size:.78rem; color:var(--text-muted); margin-bottom:.5rem; }
-        .admin-card-meta span { padding:.2rem .5rem; background:rgba(99,102,241,.08); border-radius:100px; }
-        .admin-card-price { font-family:'Syne',sans-serif; font-size:1.25rem; font-weight:700; color:#a78bfa; margin-bottom:.75rem; }
-        .admin-card-price span { font-size:.75rem; font-weight:500; color:var(--text-muted); }
-        .admin-card-desc { font-size:.85rem; color:var(--text-secondary); line-height:1.6; margin-bottom:1rem; }
-        .admin-owner-info { display:flex; align-items:center; gap:.75rem; padding:.75rem; background:rgba(99,102,241,.05); border-radius:var(--radius-sm); margin-bottom:1rem; }
-        .admin-owner-avatar { width:36px; height:36px; border-radius:50%; background:var(--gradient-btn); display:flex; align-items:center; justify-content:center; font-size:.9rem; font-weight:700; color:#fff; flex-shrink:0; }
-        .admin-owner-name { font-weight:600; font-size:.875rem; }
-        .admin-owner-meta { font-size:.75rem; color:var(--text-muted); margin-top:.1rem; }
-        .admin-actions { display:flex; gap:.75rem; }
-        .btn-approve { flex:1; padding:.7rem; background:linear-gradient(135deg,#10b981,#059669); color:#fff; border:none; border-radius:var(--radius-md); font-weight:700; font-size:.875rem; cursor:pointer; transition:transform .2s,box-shadow .2s; }
-        .btn-approve:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(16,185,129,.3); }
-        .btn-reject { flex:1; padding:.7rem; background:linear-gradient(135deg,#ef4444,#dc2626); color:#fff; border:none; border-radius:var(--radius-md); font-weight:700; font-size:.875rem; cursor:pointer; transition:transform .2s,box-shadow .2s; text-align:center; display:flex; align-items:center; justify-content:center; }
-        .btn-reject:hover { transform:translateY(-2px); box-shadow:0 6px 20px rgba(239,68,68,.3); }
-        .admin-img-strip { display:flex; gap:2px; padding:2px; background:var(--border-subtle); }
-        .admin-img-strip img { flex:1; height:50px; object-fit:cover; }
-        .empty-state { text-align:center; padding:5rem 2rem; }
-        .empty-icon { font-size:4rem; margin-bottom:1rem; }
-        .empty-state h3 { font-size:1.5rem; margin-bottom:.5rem; }
-        .empty-state p { color:var(--text-secondary); }
-    </style>
+<style>
+
+/* PAGE */
+.dashboard-page {
+    padding-top: 80px;
+    min-height: 100vh;
+}
+
+/* HEADER */
+.dashboard-header {
+    padding: 2.5rem 2rem;
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+    margin: auto 300px;
+    border-radius: 20px;
+}
+
+.dashboard-header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background: rgba(255,255,255,0.1);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+.dashboard-subtitle {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+}
+
+/* BODY */
+.dashboard-body {
+    max-width: 1200px;
+    margin: auto;
+    padding: 2rem;
+}
+
+/* GRID */
+.admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+}
+
+/* CARD */
+.admin-card {
+    background: var(--bg-card);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+    transition: 0.25s;
+}
+
+.admin-card:hover {
+    transform: translateY(-4px);
+}
+
+/* IMAGE */
+.admin-card-img {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    background: #0f172a;
+    position: relative;
+}
+
+/* STATUS */
+.admin-card-status {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    border-radius: 20px;
+}
+
+/* IMAGE COUNT */
+.admin-img-count {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    padding: 3px 8px;
+    font-size: 0.7rem;
+    border-radius: 20px;
+}
+
+/* BODY CONTENT */
+.admin-card-body {
+    padding: 1.2rem;
+}
+
+/* TITLE */
+.admin-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+/* META */
+.admin-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin: 6px 0;
+}
+
+.admin-card-meta span {
+    background: rgba(99,102,241,0.1);
+    padding: 3px 8px;
+    border-radius: 20px;
+}
+
+/* PRICE */
+.admin-card-price {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #a78bfa;
+    margin-bottom: 8px;
+}
+
+.admin-card-price span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+/* DESCRIPTION */
+.admin-card-desc {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+/* OWNER */
+.admin-owner-info {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.admin-owner-avatar {
+    width: 35px;
+    height: 35px;
+    background: var(--accent-1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-owner-name {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.admin-owner-meta {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+/* ACTION BUTTONS */
+.admin-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.admin-actions form {
+    flex: 1;
+}
+
+.admin-actions form button {
+    width: 100%;
+}
+
+.btn-reject {
+    flex: 1;
+}
+.btn-approve {
+    flex: 1;
+    background: #10b981;
+    border: none;
+    padding: 8px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+}
+
+.btn-approve:hover {
+    background: #059669;
+}
+
+.btn-reject {
+    flex: 1;
+    background: #ef4444;
+    padding: 8px;
+    border-radius: 8px;
+    text-align: center;
+    color: white;
+    text-decoration: none;
+}
+
+.btn-reject:hover {
+    background: #dc2626;
+}
+
+/* ALERTS */
+.alert {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.alert-success {
+    background: #065f46;
+    color: #d1fae5;
+}
+
+.alert-error {
+    background: #7f1d1d;
+    color: #fecaca;
+}
+
+/* EMPTY STATE */
+.empty-state {
+    text-align: center;
+    padding: 4rem;
+}
+
+.empty-icon {
+    font-size: 3rem;
+}
+
+</style>
 }
